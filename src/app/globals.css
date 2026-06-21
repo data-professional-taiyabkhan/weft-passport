@@ -1,169 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --ink: #16233f;
-    --indigo: #243b6b;
-    --indigo-deep: #192c54;
-    --zari: #c2932f;
-    --zari-bright: #dcb24c;
-    --madder: #a8412c;
-    --paper: #f4f0e7;
-    --canvas: #f7f4ec;
-    --surface: #ffffff;
-    --surface-2: #faf7ef;
-    --line: #e6e0d0;
-    --line-strong: #d6cdb8;
-    --muted: #6f6857;
-    --muted-soft: #9b927f;
-    --green: #3c7a52;
-    --green-soft: #e7f1ea;
-    --amber: #b07916;
-    --amber-soft: #fbf0db;
-    --blue-soft: #eef2fb;
+    --ivory:      #F9F5EE;
+    --sand:       #E8DCC8;
+    --loom:       #C4A882;
+    --terracotta: #B85C38;
+    --indigo:     #2D4A7A;
+    --indigo-dark:#1E3358;
+    --silk:       #8B6F5E;
+    --moss:       #4A5E40;
+    --gold:       #C9A227;
+    --charcoal:   #2C2C2C;
   }
 
-  * {
-    @apply box-border;
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply bg-weft-ivory text-weft-charcoal font-sans antialiased;
   }
 
-  html, body {
-    @apply m-0 min-h-screen;
-  }
-
-  ::selection {
-    background: rgba(194, 147, 47, 0.25);
-  }
+  h1, h2, h3 { @apply font-serif; }
+  h4, h5, h6 { @apply font-sans font-semibold; }
 }
 
 @layer components {
-  /* ---- Typography ---- */
-  .heading-serif {
-    @apply font-fraunces font-semibold tracking-tight;
-  }
-  .label-mono {
-    @apply font-mono text-xs tracking-widest uppercase font-semibold;
-  }
-
-  /* ---- Buttons ---- */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full
-           transition-all duration-150 cursor-pointer select-none;
-  }
+  /* Buttons */
   .btn-primary {
-    @apply btn bg-zari text-white hover:bg-zari-bright px-6 py-2.5 text-sm shadow-card;
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-weft-indigo text-white font-medium rounded-lg
+           hover:bg-weft-indigo-dark transition-all duration-200 shadow-heritage
+           focus:outline-none focus:ring-2 focus:ring-weft-indigo focus:ring-offset-2;
   }
+
   .btn-secondary {
-    @apply btn bg-surface border border-border text-ink hover:bg-paper px-5 py-2.5 text-sm;
+    @apply inline-flex items-center gap-2 px-6 py-3 border-2 border-weft-indigo text-weft-indigo font-medium rounded-lg
+           hover:bg-weft-indigo hover:text-white transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-weft-indigo focus:ring-offset-2;
   }
+
+  .btn-terracotta {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-weft-terracotta text-white font-medium rounded-lg
+           hover:bg-opacity-90 transition-all duration-200 shadow-md
+           focus:outline-none focus:ring-2 focus:ring-weft-terracotta focus:ring-offset-2;
+  }
+
   .btn-ghost {
-    @apply btn text-muted hover:text-ink hover:bg-paper px-4 py-2 text-sm;
-  }
-  .btn-danger {
-    @apply btn bg-madder text-white hover:opacity-90 px-5 py-2.5 text-sm;
+    @apply inline-flex items-center gap-2 px-4 py-2 text-weft-indigo font-medium rounded-lg
+           hover:bg-weft-indigo hover:bg-opacity-10 transition-all duration-200;
   }
 
-  /* ---- Cards ---- */
+  /* Cards */
   .card {
-    @apply bg-surface border border-border rounded-[16px] shadow-card;
-  }
-  .card-hover {
-    @apply card hover:shadow-lg transition-shadow duration-200;
+    @apply bg-white rounded-xl border border-weft-sand shadow-card p-6;
   }
 
-  /* ---- Status Badges ---- */
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  .card-heritage {
+    @apply bg-weft-ivory rounded-xl border border-weft-loom border-opacity-40 shadow-heritage p-6;
   }
+
+  /* Badges */
   .badge-certified {
-    @apply badge bg-sage-soft text-sage;
+    @apply inline-flex items-center gap-1 px-3 py-1 bg-weft-moss bg-opacity-10 text-weft-moss
+           text-xs font-semibold rounded-full border border-weft-moss border-opacity-30;
   }
+
   .badge-pending {
-    @apply badge bg-amber-soft text-amber;
-  }
-  .badge-field {
-    @apply badge bg-indigo-soft text-indigo;
-  }
-  .badge-rejected {
-    @apply badge bg-madder/10 text-madder;
-  }
-  .badge-trial {
-    @apply badge bg-zari-soft text-zari;
+    @apply inline-flex items-center gap-1 px-3 py-1 bg-yellow-50 text-yellow-700
+           text-xs font-semibold rounded-full border border-yellow-200;
   }
 
-  /* ---- Form elements ---- */
+  .badge-gold {
+    @apply inline-flex items-center gap-1 px-3 py-1 bg-weft-gold bg-opacity-10 text-weft-gold
+           text-xs font-bold rounded-full border border-weft-gold border-opacity-40;
+  }
+
+  /* Form inputs */
   .input {
-    @apply w-full bg-surface border border-border rounded-[11px] px-4 py-2.5
-           text-sm text-ink placeholder:text-muted-soft
-           focus:outline-none focus:ring-2 focus:ring-zari/30 focus:border-zari
-           transition-colors duration-150;
+    @apply w-full px-4 py-3 bg-white border border-weft-sand rounded-lg text-weft-charcoal
+           placeholder-weft-muted focus:outline-none focus:ring-2 focus:ring-weft-indigo
+           focus:border-transparent transition-all duration-200;
   }
+
   .label {
-    @apply block text-xs font-semibold text-muted mb-1.5 tracking-wide;
-  }
-  .select {
-    @apply input appearance-none cursor-pointer;
+    @apply block text-sm font-medium text-weft-charcoal mb-1.5;
   }
 
-  /* ---- Sidebar Nav ---- */
-  .nav-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-[10px]
-           text-[#c4cce0] text-sm font-medium cursor-pointer
-           transition-all duration-150 no-underline;
-  }
-  .nav-link:hover {
-    @apply bg-white/[0.06] text-white;
-  }
-  .nav-link.active {
-    @apply bg-zari/[0.16] text-white;
-  }
-  .nav-link.active svg {
-    @apply text-zari-bright opacity-100;
+  /* Section containers */
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* ---- Panel ---- */
-  .panel {
-    @apply card overflow-hidden;
+  /* Heritage divider */
+  .heritage-divider {
+    @apply flex items-center gap-4 my-8;
   }
-  .panel-header {
-    @apply px-5 py-4 border-b border-border flex items-center justify-between;
-  }
-  .panel-body {
-    @apply p-5;
+  .heritage-divider::before,
+  .heritage-divider::after {
+    content: '';
+    @apply flex-1 h-px bg-gradient-to-r from-transparent via-weft-loom to-transparent;
   }
 
-  /* ---- Table ---- */
-  .data-table {
-    @apply w-full text-sm;
-  }
-  .data-table th {
-    @apply text-xs font-semibold text-muted uppercase tracking-wider
-           px-4 py-3 text-left bg-surface-2 border-b border-border;
-  }
-  .data-table td {
-    @apply px-4 py-3 border-b border-border/60 text-sm;
-  }
-  .data-table tr:last-child td {
-    @apply border-b-0;
-  }
-  .data-table tr:hover td {
-    @apply bg-paper/50;
+  /* Loom pattern overlay */
+  .loom-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C4A882' fill-opacity='0.06'%3E%3Cpath d='M0 0h20v20H0V0zm10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm0-2a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 }
 
-/* Animations */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out;
-}
+@layer utilities {
+  .text-gradient-heritage {
+    @apply bg-gradient-to-r from-weft-indigo via-weft-silk to-weft-terracotta bg-clip-text text-transparent;
+  }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d6cdb8; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #c2932f; }
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--loom) transparent;
+  }
+}

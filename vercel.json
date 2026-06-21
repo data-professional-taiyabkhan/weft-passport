@@ -3,13 +3,5 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "regions": ["lhr1"],
-  "headers": [
-    {
-      "source": "/p/:path*",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
-      ]
-    }
-  ]
+  "regions": ["lhr1"]
 }

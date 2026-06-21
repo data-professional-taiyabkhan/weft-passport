@@ -1,75 +1,57 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import DashboardStats from '@/components/dashboard/DashboardStats';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import OverviewStats from '@/components/dashboard/OverviewStats';
 import RecentBatches from '@/components/dashboard/RecentBatches';
-import ComplianceWidget from '@/components/dashboard/ComplianceWidget';
+import ComplianceAlert from '@/components/dashboard/ComplianceAlert';
 import QuickActions from '@/components/dashboard/QuickActions';
 
-export const metadata = { title: 'Dashboard Overview' };
-
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
 
-  const { data: brand } = await supabase
-    .from('brands')
-    .select('*')
-    .eq('profile_id', user?.id)
-    .single();
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
-  const { data: batches } = await supabase
-    .from('batches')
-    .select('id, batch_id_code, textile_name, status, certified_at, artisan_id, qr_scans')
-    .eq('brand_id', brand?.id)
-    .order('created_at', { ascending: false })
-    .limit(5);
+  // Fetch stats
+  let stats = { batches: 0, certified: 0, skus: 0, artisans: 0 };
+  try {
+    const [batches, skus, artisans] = await Promise.all([
+      supabase.from('batches').select('id, status', { count: 'exact' }),
+      supabase.from('skus').select('id', { count: 'exact' }),
+      supabase.from('artisans').select('id', { count: 'exact' }),
+    ]);
+    stats.batches = batches.count ?? 0;
+    stats.certified = batches.data?.filter(b => b.status === 'certified').length ?? 0;
+    stats.skus = skus.count ?? 0;
+    stats.artisans = artisans.count ?? 0;
+  } catch {}
 
-  const { count: totalBatches } = await supabase
-    .from('batches')
-    .select('*', { count: 'exact', head: true })
-    .eq('brand_id', brand?.id);
-
-  const { count: certifiedCount } = await supabase
-    .from('batches')
-    .select('*', { count: 'exact', head: true })
-    .eq('brand_id', brand?.id)
-    .eq('status', 'certified');
-
-  const { count: activeSKUs } = await supabase
-    .from('skus')
-    .select('*', { count: 'exact', head: true })
-    .eq('brand_id', brand?.id)
-    .eq('active', true);
-
-  const stats = {
-    totalBatches:   totalBatches || 0,
-    certified:      certifiedCount || 0,
-    activeSKUs:     activeSKUs || 0,
-    complianceScore: brand?.compliance_score || 0,
-    trialEndsAt:    brand?.trial_ends_at,
-    tier:           brand?.subscription_tier || 'trial',
-  };
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
       <div>
-        <h1 className="font-serif text-2xl text-weft-charcoal">
-          Welcome back{brand?.brand_name ? `, ${brand.brand_name}` : ''} 🧵
+        <h1 className="text-3xl font-serif text-indigo-900">
+          {greeting}, {profile?.full_name?.split(' ')[0] ?? 'there'} 👋
         </h1>
-        <p className="text-sm text-weft-muted mt-1">
-          Your provenance certification overview
-        </p>
+        <p className="text-gray-500 mt-1">Here&apos;s what&apos;s happening with your certifications today.</p>
       </div>
 
-      <QuickActions />
-      <DashboardStats stats={stats} />
+      {/* Compliance Alert */}
+      <ComplianceAlert />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
-          <RecentBatches batches={batches || []} />
+      {/* Stats */}
+      <OverviewStats stats={stats} role={profile?.role} />
+
+      {/* Quick Actions + Recent */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RecentBatches />
         </div>
         <div>
-          <ComplianceWidget score={stats.complianceScore} tier={stats.tier} />
+          <QuickActions role={profile?.role} />
         </div>
       </div>
     </div>

@@ -1,66 +1,67 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { Plus, QrCode } from 'lucide-react';
 
 export default async function SKUsPage() {
   const supabase = createClient();
   const { data: skus } = await supabase
     .from('skus')
     .select('*, batches(batch_code, textile_type, status)')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="page-header flex items-start justify-between">
+    <div className="animate-fade-in">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1>SKU Manager</h1>
-          <p>Map your product SKUs to certified production batches and generate QR codes</p>
+          <h1 className="text-3xl font-serif text-indigo-900">SKU Management</h1>
+          <p className="text-gray-500 text-sm mt-1">Link products to certified batches and generate QR passport codes</p>
         </div>
-        <Link href="/dashboard/skus/new" className="btn-primary">
-          <Plus size={16} /> Add SKU
-        </Link>
+        <Link href="/dashboard/skus/new" className="btn-primary">➕ Add SKU</Link>
       </div>
-
-      <div className="card p-0 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-cream-100 border-b border-weft-border">
-            <tr>
-              {['SKU Code','Product Name','Batch','Textile','Status','QR'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-weft-border">
-            {!skus?.length ? (
-              <tr><td colSpan={6} className="text-center py-16 text-gray-400">
-                <div className="text-4xl mb-3">🏷️</div>
-                <p>No SKUs yet. <Link href="/dashboard/skus/new" className="text-indigo-700 underline">Add your first SKU</Link></p>
-              </td></tr>
-            ) : skus.map((s: any) => (
-              <tr key={s.id} className="hover:bg-cream-50 transition-colors">
-                <td className="px-4 py-3.5 font-mono text-xs text-indigo-700">{s.sku_code}</td>
-                <td className="px-4 py-3.5 font-medium text-gray-800">{s.product_name}</td>
-                <td className="px-4 py-3.5">
-                  {s.batches ? <Link href={`/dashboard/batches/${s.batch_id}`} className="font-mono text-xs text-indigo-600 hover:underline">{s.batches.batch_code}</Link> : '—'}
-                </td>
-                <td className="px-4 py-3.5 text-gray-600">{s.batches?.textile_type ?? '—'}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`badge ${ s.batches?.status === 'certified' ? 'badge-certified' : 'badge-draft'}`}>
-                    {s.batches?.status === 'certified' ? '✅ Certified' : '⏳ Pending'}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5">
-                  {s.batches?.status === 'certified' ? (
-                    <a href={`/passport/${s.batch_id}`} target="_blank"
-                      className="flex items-center gap-1.5 text-xs text-indigo-700 hover:underline">
-                      <QrCode size={13} /> View
-                    </a>
-                  ) : <span className="text-xs text-gray-400">Not ready</span>}
-                </td>
+      <div className="card overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-cream-100 border-b border-weft-border">
+              <tr>
+                {['SKU Code','Product Name','Type','Linked Batch','Price','Published','QR Code','Actions'].map(h=>(
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-weft-border">
+              {skus && skus.length > 0 ? skus.map((s: any) => (
+                <tr key={s.id} className="hover:bg-cream-50 transition-colors">
+                  <td className="px-4 py-3"><span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">{s.sku_code}</span></td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-weft-text">{s.product_name}</p>
+                    {s.collection_name && <p className="text-xs text-gray-400">{s.collection_name}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{s.product_type ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-xs text-indigo-600">{s.batches?.batch_code ?? '—'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">{s.retail_price_gbp ? `£${s.retail_price_gbp}` : '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`badge ${s.is_published ? 'badge-certified' : 'badge-draft'}`}>{s.is_published ? 'Live' : 'Draft'}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {s.qr_code_url ? <Link href={s.qr_code_url} className="text-xs text-green-600 hover:underline">Download</Link> : <span className="text-xs text-gray-400">Not generated</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link href={`/dashboard/skus/${s.id}`} className="text-xs text-indigo-600 hover:underline">Edit</Link>
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan={8} className="px-4 py-16 text-center">
+                  <div className="text-4xl mb-3">🏷️</div>
+                  <p className="text-gray-500 font-medium">No SKUs created yet</p>
+                  <p className="text-gray-400 text-sm mt-1">Add your first product SKU and link it to a certified batch</p>
+                  <Link href="/dashboard/skus/new" className="btn-primary mt-4 inline-flex">Add first SKU</Link>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

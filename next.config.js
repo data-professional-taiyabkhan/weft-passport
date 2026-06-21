@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**.supabase.co' },
-      { protocol: 'https', hostname: 'images.unsplash.com' },
-    ],
+    domains: ['images.unsplash.com', 'your-supabase-project.supabase.co'],
   },
-}
+  experimental: {
+    serverComponentsExternalPackages: ['qrcode'],
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

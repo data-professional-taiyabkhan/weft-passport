@@ -1,128 +1,125 @@
 import { createClient } from '@/lib/supabase/server';
-import { Download, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function CompliancePage() {
   const supabase = createClient();
-  const { data: batches } = await supabase.from('batches').select('id, batch_code, textile_type, status').order('created_at', {ascending: false});
-  const certified = batches?.filter(b => b.status === 'certified') ?? [];
-  const total = batches?.length ?? 0;
-  const certRate = total ? Math.round((certified.length / total) * 100) : 0;
+  const { data: docs } = await supabase
+    .from('compliance_docs')
+    .select('*, batches(batch_code, textile_type)')
+    .order('generated_at', { ascending: false })
+    .limit(20);
 
   const frameworks = [
     {
-      name: 'EU Green Claims Directive',
-      status: certRate >= 80 ? 'compliant' : certRate >= 50 ? 'partial' : 'action',
-      deadline: '27 Sep 2026',
-      detail: 'All green claims must be substantiated. Weft Passport certificates count as third-party evidence.',
+      id: 'ECGT',
+      name: 'EU Green Claims (ECGT)',
+      description: 'Empowering Consumers for the Green Transition Directive',
+      enforcement: 'September 2026',
+      status: 'active',
+      statusLabel: 'Enforcement Active',
+      color: 'border-red-400',
+      badge: 'bg-red-100 text-red-700',
+      fields: ['Artisan identity verified', 'Production method documented', 'Third-party co-sign', 'Geo-tagged evidence'],
     },
     {
-      name: 'CSDDD (Corporate Sustainability Due Diligence)',
-      status: certRate >= 70 ? 'compliant' : 'partial',
-      deadline: 'Jul 2027',
-      detail: 'Artisan working conditions, wages and supply chain documentation required.',
+      id: 'DPP',
+      name: 'Digital Product Passport',
+      description: 'ESPR Regulation — textiles as priority category',
+      enforcement: 'Late 2026 / 2027',
+      status: 'upcoming',
+      statusLabel: 'Prepare Now',
+      color: 'border-amber-400',
+      badge: 'bg-amber-100 text-amber-700',
+      fields: ['Manufacturing origin', 'Production details', 'Traceability ID', 'QR/NFC access'],
     },
     {
-      name: 'EU Digital Product Passport (DPP)',
-      status: 'partial',
-      deadline: 'Jan 2030',
-      detail: 'QR-based provenance data aligns with DPP technical specification. Export ready.',
+      id: 'CSDDD',
+      name: 'Corporate Sustainability Due Diligence',
+      description: 'CSDDD — phased from 2027',
+      enforcement: '2027 onwards',
+      status: 'upcoming',
+      statusLabel: 'Upcoming',
+      color: 'border-blue-400',
+      badge: 'bg-blue-100 text-blue-700',
+      fields: ['Tier-1 supplier records', 'Artisan-level due diligence', 'Risk assessment docs'],
     },
     {
-      name: 'UK Mandatory Reporting',
-      status: certRate >= 60 ? 'compliant' : 'action',
-      deadline: 'Ongoing',
-      detail: 'Modern Slavery Act & supply chain transparency obligations for UK brands.',
+      id: 'UK_GREEN',
+      name: 'UK Green Claims Code',
+      description: 'CMA-administered, active enforcement',
+      enforcement: 'Active now',
+      status: 'active',
+      statusLabel: 'Active',
+      color: 'border-green-400',
+      badge: 'bg-green-100 text-green-700',
+      fields: ['Substantiated artisan claims', 'Evidence trail', 'SKU-level verification'],
     },
   ];
 
-  const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
-    compliant: { icon: CheckCircle, color: 'text-green-600 bg-green-50 border-green-200', label: 'Compliant' },
-    partial: { icon: Info, color: 'text-amber-600 bg-amber-50 border-amber-200', label: 'Partial' },
-    action: { icon: AlertTriangle, color: 'text-red-600 bg-red-50 border-red-200', label: 'Action Required' },
-  };
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="page-header">
-        <h1>Compliance Centre</h1>
-        <p>Monitor your compliance status against EU & UK regulatory frameworks</p>
-      </div>
-
-      {/* Score card */}
-      <div className="card bg-gradient-to-r from-indigo-900 to-indigo-700 text-white">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <div className="text-indigo-200 text-sm mb-1">Overall Certification Rate</div>
-            <div className="text-5xl font-bold">{certRate}%</div>
-            <div className="text-indigo-200 text-sm mt-1">{certified.length} of {total} batches certified</div>
-          </div>
-          <div className="flex gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold">{certified.length}</div>
-              <div className="text-indigo-200 text-xs">Certified</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{total - certified.length}</div>
-              <div className="text-indigo-200 text-xs">Pending</div>
-            </div>
-          </div>
-          <button className="btn bg-white text-indigo-900 hover:bg-cream-100 flex items-center gap-2">
-            <Download size={16} /> Export Report
-          </button>
+    <div className="animate-fade-in">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-serif text-indigo-900">Compliance Centre</h1>
+          <p className="text-gray-500 text-sm mt-1">Regulatory readiness for UK &amp; EU fashion compliance frameworks</p>
         </div>
+        <Link href="/dashboard/compliance/export" className="btn-primary">📤 Export Report</Link>
       </div>
 
-      {/* Framework cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {frameworks.map((f) => {
-          const cfg = statusConfig[f.status];
-          return (
-            <div key={f.name} className={`card border-l-4 ${cfg.color.includes('green') ? 'border-l-green-500' : cfg.color.includes('amber') ? 'border-l-amber-400' : 'border-l-red-500'}`}>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <h3 className="font-semibold text-weft-text">{f.name}</h3>
-                  <div className="text-xs text-gray-400 mt-0.5">Deadline: {f.deadline}</div>
-                </div>
-                <span className={`badge border px-2.5 py-1 text-xs flex items-center gap-1.5 ${cfg.color}`}>
-                  <cfg.icon size={12} />{cfg.label}
-                </span>
+      {/* Frameworks */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        {frameworks.map(fw => (
+          <div key={fw.id} className={`card border-l-4 ${fw.color}`}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-weft-text">{fw.name}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{fw.description}</p>
               </div>
-              <p className="text-sm text-gray-600">{f.detail}</p>
+              <span className={`badge ${fw.badge} ml-3 flex-shrink-0`}>{fw.statusLabel}</span>
             </div>
-          );
-        })}
+            <p className="text-xs text-gray-400 mb-3">⏰ Enforcement: {fw.enforcement}</p>
+            <div className="space-y-1.5">
+              {fw.fields.map(f => (
+                <div key={f} className="flex items-center gap-2 text-xs text-gray-600">
+                  <span className="text-green-500">✓</span> {f}
+                </div>
+              ))}
+            </div>
+            <button className="btn-outline mt-4 text-xs px-3 py-1.5">Generate {fw.id} Export</button>
+          </div>
+        ))}
       </div>
 
-      {/* Certified batches table */}
+      {/* Document history */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-serif text-indigo-900">Certified Batches</h3>
-          <button className="btn-ghost border border-weft-border text-sm flex items-center gap-2">
-            <Download size={14} /> Export CSV
-          </button>
-        </div>
-        {!certified.length ? (
-          <p className="text-sm text-gray-400 py-8 text-center">No certified batches yet.</p>
-        ) : (
+        <h3 className="font-serif text-lg text-indigo-900 mb-4">Generated Documents</h3>
+        {docs && docs.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-weft-border">
-                <tr>{['Batch Code','Textile Type','Certificate'].map(h => (
-                  <th key={h} className="text-left py-3 pr-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                ))}</tr>
+            <table className="w-full">
+              <thead className="bg-cream-100">
+                <tr>
+                  {['Document Type','Linked Batch','Generated','Expires','Download'].map(h=>(
+                    <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
               </thead>
               <tbody className="divide-y divide-weft-border">
-                {certified.map((b: any) => (
-                  <tr key={b.id} className="hover:bg-cream-50">
-                    <td className="py-3 pr-4 font-mono text-xs text-indigo-700">{b.batch_code}</td>
-                    <td className="py-3 pr-4 text-gray-700">{b.textile_type}</td>
-                    <td className="py-3">
-                      <a href={`/passport/${b.id}`} target="_blank" className="text-xs text-indigo-600 hover:underline">View Passport ↗</a>
-                    </td>
+                {docs.map((d: any) => (
+                  <tr key={d.id} className="hover:bg-cream-50">
+                    <td className="px-3 py-2"><span className="badge bg-indigo-100 text-indigo-700">{d.doc_type}</span></td>
+                    <td className="px-3 py-2 font-mono text-xs text-indigo-600">{d.batches?.batch_code ?? '—'}</td>
+                    <td className="px-3 py-2 text-sm text-gray-500">{new Date(d.generated_at).toLocaleDateString('en-GB')}</td>
+                    <td className="px-3 py-2 text-sm text-gray-500">{d.expires_at ? new Date(d.expires_at).toLocaleDateString('en-GB') : 'N/A'}</td>
+                    <td className="px-3 py-2">{d.doc_url ? <a href={d.doc_url} className="text-xs text-indigo-600 hover:underline">Download PDF</a> : '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-gray-400">No compliance documents generated yet.</p>
+            <p className="text-gray-400 text-sm mt-1">Generate your first report by selecting a framework above.</p>
           </div>
         )}
       </div>

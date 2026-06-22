@@ -714,6 +714,29 @@ tbody tr.clickable:hover { background: var(--surface-2); }
 .framework-card .date { font-family: var(--font-mono); font-size: 11px; color: var(--zari); font-weight: 600; }
 .framework-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0; }
 
+/* ── Timeline (about / compliance) ── */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: var(--line); border-radius: 2px; }
+.timeline-item { position: relative; margin-bottom: 28px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-item::before { content: ''; position: absolute; left: -25px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--dot, var(--zari)); border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--dot, var(--zari)); }
+.timeline-item .year { font-family: var(--font-mono); font-size: 12px; color: var(--dot, var(--zari)); font-weight: 600; margin-bottom: 4px; }
+.timeline-item h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+.timeline-item p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+/* ── Contact ── */
+.contact-info .item { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+.contact-info .item .ic { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; color: var(--indigo); flex-shrink: 0; }
+.contact-info .item .ic svg { width: 18px; height: 18px; }
+.contact-info .item .t { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.contact-info .item .d { font-size: 13px; color: var(--muted); }
+.contact-info .item a { color: var(--indigo); font-weight: 500; }
+.contact-info .item a:hover { text-decoration: underline; }
+.success-state { text-align: center; padding: 32px 12px; }
+.success-state .seal { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--green); display: grid; place-items: center; margin: 0 auto 18px; color: var(--green); }
+.success-state h3 { font-family: var(--font-serif); font-size: 22px; font-weight: 600; margin: 0 0 10px; }
+.success-state p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
+
 /* ── Responsive ── */
 @media (max-width: 1000px) {
   .two { grid-template-columns: 1fr; }

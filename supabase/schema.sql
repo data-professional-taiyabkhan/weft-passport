@@ -1,29 +1,23 @@
 -- ============================================================
--- WEFT PASSPORT — Complete Database Schema
--- Supabase PostgreSQL
+-- WEFT PASSPORT — Database Schema (corrected, matches live DB)
+-- Project ref: psjuehgawhpynvfftibu  (region eu-west-2)
+-- Fixes vs original: removed unused postgis; is_admin() SECURITY DEFINER
+-- to stop RLS recursion; handle_new_user() signup trigger; added the
+-- missing RLS policies on clusters/coordinators/looms/skus/
+-- compliance_documents/audit_logs (were RLS-enabled with zero policies).
 -- ============================================================
 
--- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "postgis";  -- for geo-tagged locations
 
--- ============================================================
--- ENUMS
--- ============================================================
-
-CREATE TYPE user_role AS ENUM ('admin', 'brand', 'coordinator', 'consumer');
+CREATE TYPE user_role           AS ENUM ('admin', 'brand', 'coordinator', 'consumer');
 CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected', 'under_review');
-CREATE TYPE batch_status AS ENUM ('draft', 'submitted', 'field_verified', 'certified', 'rejected');
-CREATE TYPE subscription_tier AS ENUM ('trial', 'standard', 'premium', 'enterprise');
+CREATE TYPE batch_status        AS ENUM ('draft', 'submitted', 'field_verified', 'certified', 'rejected');
+CREATE TYPE subscription_tier   AS ENUM ('trial', 'standard', 'premium', 'enterprise');
 CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled', 'trial');
-CREATE TYPE loom_type AS ENUM ('pit_loom', 'frame_loom', 'jacquard', 'dobby', 'fly_shuttle', 'handloom_other');
-CREATE TYPE textile_technique AS ENUM ('banarasi_silk', 'kantha', 'ikat', 'block_print', 'embroidery', 'jamdani', 'chanderi', 'other');
+CREATE TYPE loom_type           AS ENUM ('pit_loom', 'frame_loom', 'jacquard', 'dobby', 'fly_shuttle', 'handloom_other');
+CREATE TYPE textile_technique   AS ENUM ('banarasi_silk', 'kantha', 'ikat', 'block_print', 'embroidery', 'jamdani', 'chanderi', 'other');
 CREATE TYPE compliance_framework AS ENUM ('eu_ecgt', 'eu_csddd', 'eu_dpp', 'uk_green_claims', 'gots', 'fair_trade');
-CREATE TYPE document_type AS ENUM ('compliance_report', 'artisan_certificate', 'batch_certificate', 'audit_trail', 'qr_summary');
-
--- ============================================================
--- PROFILES (extends Supabase auth.users)
--- ============================================================
+CREATE TYPE document_type       AS ENUM ('compliance_report', 'artisan_certificate', 'batch_certificate', 'audit_trail', 'qr_summary');
 
 CREATE TABLE public.profiles (
   id              UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -38,10 +32,6 @@ CREATE TABLE public.profiles (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- BRANDS (Fashion Brand Clients)
--- ============================================================
-
 CREATE TABLE public.brands (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   profile_id        UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -52,7 +42,7 @@ CREATE TABLE public.brands (
   description       TEXT,
   country           TEXT DEFAULT 'United Kingdom',
   city              TEXT,
-  annual_revenue    TEXT, -- range bracket e.g. '500k-1m'
+  annual_revenue    TEXT,
   subscription_tier subscription_tier DEFAULT 'trial',
   subscription_status subscription_status DEFAULT 'trial',
   subscription_starts_at TIMESTAMPTZ,
@@ -66,14 +56,10 @@ CREATE TABLE public.brands (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- CLUSTERS (Weaving Regions / Cooperatives)
--- ============================================================
-
 CREATE TABLE public.clusters (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  name        TEXT NOT NULL,  -- e.g. 'Varanasi Cluster'
-  region      TEXT NOT NULL,  -- e.g. 'Varanasi, Uttar Pradesh'
+  name        TEXT NOT NULL,
+  region      TEXT NOT NULL,
   country     TEXT DEFAULT 'India',
   lat         NUMERIC(10,7),
   lng         NUMERIC(10,7),
@@ -81,10 +67,6 @@ CREATE TABLE public.clusters (
   active      BOOLEAN DEFAULT TRUE,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
-
--- ============================================================
--- COORDINATORS (Field agents embedded in clusters)
--- ============================================================
 
 CREATE TABLE public.coordinators (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -99,19 +81,15 @@ CREATE TABLE public.coordinators (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- ARTISANS (Master Weavers)
--- ============================================================
-
 CREATE TABLE public.artisans (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  artisan_id_code   TEXT UNIQUE NOT NULL,  -- e.g. VNS-2024-0042
+  artisan_id_code   TEXT UNIQUE NOT NULL,
   cluster_id        UUID REFERENCES public.clusters(id),
   coordinator_id    UUID REFERENCES public.coordinators(id),
   full_name         TEXT NOT NULL,
-  display_name      TEXT,  -- name shown on consumer pages
+  display_name      TEXT,
   gender            TEXT,
-  age_bracket       TEXT,  -- '25-35', '35-45' etc
+  age_bracket       TEXT,
   phone             TEXT,
   village           TEXT,
   district          TEXT,
@@ -119,8 +97,8 @@ CREATE TABLE public.artisans (
   country           TEXT DEFAULT 'India',
   lat               NUMERIC(10,7),
   lng               NUMERIC(10,7),
-  bio               TEXT,  -- artisan story shown to consumers
-  specialisation    TEXT[],  -- array of techniques
+  bio               TEXT,
+  specialisation    TEXT[],
   years_experience  INTEGER,
   photo_url         TEXT,
   verification_status verification_status DEFAULT 'pending',
@@ -134,13 +112,9 @@ CREATE TABLE public.artisans (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- LOOMS
--- ============================================================
-
 CREATE TABLE public.looms (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  loom_id_code    TEXT UNIQUE NOT NULL,  -- e.g. LM-VNS-0088
+  loom_id_code    TEXT UNIQUE NOT NULL,
   artisan_id      UUID REFERENCES public.artisans(id) ON DELETE CASCADE,
   loom_type       loom_type NOT NULL,
   width_cm        NUMERIC(6,2),
@@ -153,66 +127,45 @@ CREATE TABLE public.looms (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- TEXTILE BATCHES (Core certified unit)
--- ============================================================
-
 CREATE TABLE public.batches (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  batch_id_code     TEXT UNIQUE NOT NULL,  -- e.g. WP-2024-VNS-0042
+  batch_id_code     TEXT UNIQUE NOT NULL,
   brand_id          UUID REFERENCES public.brands(id),
   artisan_id        UUID REFERENCES public.artisans(id),
   loom_id           UUID REFERENCES public.looms(id),
   coordinator_id    UUID REFERENCES public.coordinators(id),
   cluster_id        UUID REFERENCES public.clusters(id),
-
-  -- Textile details
   textile_name      TEXT NOT NULL,
   technique         textile_technique NOT NULL,
-  fibre_content     TEXT,  -- e.g. '100% pure silk'
+  fibre_content     TEXT,
   colour_palette    TEXT,
   thread_count      INTEGER,
-  dimensions_cm     TEXT,  -- e.g. '250cm x 115cm'
+  dimensions_cm     TEXT,
   weight_grams      NUMERIC(8,2),
   quantity_pieces   INTEGER DEFAULT 1,
-
-  -- Production data
   production_start  DATE,
   production_end    DATE,
   production_location TEXT,
   production_lat    NUMERIC(10,7),
   production_lng    NUMERIC(10,7),
-
-  -- Verification
   status            batch_status DEFAULT 'draft',
   verification_status verification_status DEFAULT 'pending',
   field_verified_at TIMESTAMPTZ,
   certified_at      TIMESTAMPTZ,
   certified_by      UUID REFERENCES public.profiles(id),
   rejection_reason  TEXT,
-
-  -- Evidence
-  photos            TEXT[],  -- array of storage URLs
+  photos            TEXT[],
   video_url         TEXT,
   field_notes       TEXT,
-
-  -- QR & Consumer
   qr_code_url       TEXT,
-  provenance_page_slug TEXT UNIQUE,  -- /p/{slug}
+  provenance_page_slug TEXT UNIQUE,
   consumer_views    INTEGER DEFAULT 0,
   qr_scans          INTEGER DEFAULT 0,
-
-  -- Compliance
   compliance_frameworks compliance_framework[],
   regulatory_notes  TEXT,
-
   created_at        TIMESTAMPTZ DEFAULT NOW(),
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
-
--- ============================================================
--- SKUs (Brand products linked to batches)
--- ============================================================
 
 CREATE TABLE public.skus (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -229,41 +182,26 @@ CREATE TABLE public.skus (
   UNIQUE(sku_code, brand_id)
 );
 
--- ============================================================
--- PROVENANCE PAGES (Consumer-facing QR destination)
--- ============================================================
-
 CREATE TABLE public.provenance_pages (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  slug            TEXT UNIQUE NOT NULL,  -- short URL slug
+  slug            TEXT UNIQUE NOT NULL,
   batch_id        UUID REFERENCES public.batches(id) ON DELETE CASCADE,
   sku_id          UUID REFERENCES public.skus(id),
   brand_id        UUID REFERENCES public.brands(id),
-
-  -- Display content
-  headline        TEXT,  -- e.g. "Your Banarasi Silk was woven by Ravi Kumar"
+  headline        TEXT,
   artisan_story   TEXT,
   production_story TEXT,
   cultural_context TEXT,
-
-  -- Certification badge
   certified       BOOLEAN DEFAULT FALSE,
   certification_date TIMESTAMPTZ,
-  compliance_badge  TEXT[],  -- ['EU-ECGT', 'UK-GCC']
-
-  -- Analytics
+  compliance_badge  TEXT[],
   total_views     INTEGER DEFAULT 0,
   unique_views    INTEGER DEFAULT 0,
   last_viewed_at  TIMESTAMPTZ,
-
   published       BOOLEAN DEFAULT FALSE,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
-
--- ============================================================
--- COMPLIANCE DOCUMENTS
--- ============================================================
 
 CREATE TABLE public.compliance_documents (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -279,10 +217,6 @@ CREATE TABLE public.compliance_documents (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- AUDIT LOGS
--- ============================================================
-
 CREATE TABLE public.audit_logs (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   actor_id    UUID REFERENCES public.profiles(id),
@@ -295,25 +229,17 @@ CREATE TABLE public.audit_logs (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
--- ANALYTICS EVENTS
--- ============================================================
-
 CREATE TABLE public.analytics_events (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   brand_id    UUID REFERENCES public.brands(id),
   batch_id    UUID REFERENCES public.batches(id),
   page_slug   TEXT,
-  event_type  TEXT NOT NULL,  -- 'qr_scan', 'page_view', 'share', 'download'
+  event_type  TEXT NOT NULL,
   country     TEXT,
   device      TEXT,
   referrer    TEXT,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
-
--- ============================================================
--- INDEXES for performance
--- ============================================================
 
 CREATE INDEX idx_batches_brand_id         ON public.batches(brand_id);
 CREATE INDEX idx_batches_artisan_id       ON public.batches(artisan_id);
@@ -326,112 +252,90 @@ CREATE INDEX idx_provenance_slug          ON public.provenance_pages(slug);
 CREATE INDEX idx_analytics_brand_id       ON public.analytics_events(brand_id);
 CREATE INDEX idx_analytics_created_at     ON public.analytics_events(created_at);
 
--- ============================================================
--- ROW LEVEL SECURITY (RLS)
--- ============================================================
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN LANGUAGE SQL SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin');
+$$;
 
-ALTER TABLE public.profiles           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.brands             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.artisans           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.looms              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.batches            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.skus               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.provenance_pages   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.compliance_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coordinators       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.clusters           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.analytics_events   ENABLE ROW LEVEL SECURITY;
-
--- Profiles: users can read/update own profile; admins see all
-CREATE POLICY "profiles_own" ON public.profiles
-  FOR ALL USING (auth.uid() = id);
-
-CREATE POLICY "profiles_admin_all" ON public.profiles
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
-
--- Brands: brand user sees own brand; admin sees all
-CREATE POLICY "brands_own" ON public.brands
-  FOR ALL USING (profile_id = auth.uid());
-
-CREATE POLICY "brands_admin" ON public.brands
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
-
--- Batches: brand sees own; coordinator sees cluster batches; admin all
-CREATE POLICY "batches_brand_own" ON public.batches
-  FOR ALL USING (
-    brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid())
-  );
-
-CREATE POLICY "batches_coordinator" ON public.batches
-  FOR SELECT USING (
-    coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid())
-  );
-
-CREATE POLICY "batches_admin" ON public.batches
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
-
--- Provenance pages: publicly readable by slug (no auth required)
-CREATE POLICY "provenance_public_read" ON public.provenance_pages
-  FOR SELECT USING (published = TRUE);
-
-CREATE POLICY "provenance_brand_manage" ON public.provenance_pages
-  FOR ALL USING (
-    brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid())
-  );
-
--- Artisans: coordinator manages own cluster; brands can read verified; admin all
-CREATE POLICY "artisans_coordinator_own" ON public.artisans
-  FOR ALL USING (
-    cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid())
-  );
-
-CREATE POLICY "artisans_brands_read" ON public.artisans
-  FOR SELECT USING (verification_status = 'verified');
-
-CREATE POLICY "artisans_admin" ON public.artisans
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
-
--- Analytics: brands see own; admin all
-CREATE POLICY "analytics_brand" ON public.analytics_events
-  FOR SELECT USING (
-    brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid())
-  );
-
-CREATE POLICY "analytics_public_insert" ON public.analytics_events
-  FOR INSERT WITH CHECK (TRUE);  -- allow anonymous inserts for QR scans
-
--- ============================================================
--- TRIGGERS — updated_at auto-update
--- ============================================================
-
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  NEW.updated_at = NOW();
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (NEW.id, NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'), 'brand')
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-CREATE TRIGGER update_profiles_updated_at    BEFORE UPDATE ON public.profiles    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_brands_updated_at      BEFORE UPDATE ON public.brands      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_artisans_updated_at    BEFORE UPDATE ON public.artisans    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_batches_updated_at     BEFORE UPDATE ON public.batches     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_provenance_updated_at  BEFORE UPDATE ON public.provenance_pages FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 
--- ============================================================
--- SEED DATA — Default clusters & admin setup
--- ============================================================
+CREATE TRIGGER update_profiles_updated_at    BEFORE UPDATE ON public.profiles    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_brands_updated_at      BEFORE UPDATE ON public.brands      FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_artisans_updated_at    BEFORE UPDATE ON public.artisans    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_batches_updated_at     BEFORE UPDATE ON public.batches     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_provenance_updated_at  BEFORE UPDATE ON public.provenance_pages FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+ALTER TABLE public.profiles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.brands               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clusters             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coordinators         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.artisans             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.looms                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.batches              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.skus                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.provenance_pages     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compliance_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events     ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "profiles_rw" ON public.profiles FOR ALL USING (auth.uid() = id OR public.is_admin()) WITH CHECK (auth.uid() = id OR public.is_admin());
+CREATE POLICY "brands_rw" ON public.brands FOR ALL USING (profile_id = auth.uid() OR public.is_admin()) WITH CHECK (profile_id = auth.uid() OR public.is_admin());
+CREATE POLICY "clusters_read"  ON public.clusters FOR SELECT USING (TRUE);
+CREATE POLICY "clusters_admin" ON public.clusters FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "coordinators_self"      ON public.coordinators FOR ALL USING (profile_id = auth.uid() OR public.is_admin()) WITH CHECK (profile_id = auth.uid() OR public.is_admin());
+CREATE POLICY "coordinators_read_auth" ON public.coordinators FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "artisans_admin"       ON public.artisans FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "artisans_coordinator" ON public.artisans FOR ALL
+  USING (cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid()))
+  WITH CHECK (cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid()));
+CREATE POLICY "artisans_read_verified" ON public.artisans FOR SELECT USING (verification_status = 'verified' AND auth.uid() IS NOT NULL);
+CREATE POLICY "looms_admin"     ON public.looms FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "looms_read_auth" ON public.looms FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "looms_coordinator" ON public.looms FOR ALL
+  USING (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()))
+  WITH CHECK (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()));
+CREATE POLICY "batches_brand_own" ON public.batches FOR ALL
+  USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
+  WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+CREATE POLICY "batches_coordinator" ON public.batches FOR ALL
+  USING (coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid()))
+  WITH CHECK (coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid()));
+CREATE POLICY "batches_admin" ON public.batches FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "skus_brand_own" ON public.skus FOR ALL
+  USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
+  WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+CREATE POLICY "skus_admin" ON public.skus FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "provenance_public_read"   ON public.provenance_pages FOR SELECT USING (published = TRUE);
+CREATE POLICY "provenance_brand_manage"  ON public.provenance_pages FOR ALL
+  USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
+  WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+CREATE POLICY "provenance_admin"         ON public.provenance_pages FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "compliance_brand_own" ON public.compliance_documents FOR ALL
+  USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
+  WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+CREATE POLICY "compliance_admin" ON public.compliance_documents FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "audit_admin_read"  ON public.audit_logs FOR SELECT USING (public.is_admin());
+CREATE POLICY "audit_insert_auth" ON public.audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "analytics_brand_read" ON public.analytics_events FOR SELECT
+  USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()) OR public.is_admin());
+CREATE POLICY "analytics_public_insert" ON public.analytics_events FOR INSERT WITH CHECK (TRUE);
 
 INSERT INTO public.clusters (name, region, country, lat, lng, description) VALUES
-  ('Varanasi Cluster',     'Varanasi, Uttar Pradesh', 'India', 25.3176, 82.9739, 'Primary Banarasi silk weaving cluster — home to master weavers of Varanasi'),
-  ('Murshidabad Cluster',  'Murshidabad, West Bengal', 'India', 24.1800, 88.2667, 'Renowned for Jamdani and fine Murshidabad silk weaving'),
-  ('Chanderi Cluster',     'Chanderi, Madhya Pradesh', 'India', 24.7132, 78.1419, 'Home of the iconic lightweight Chanderi silk-cotton fabric');
+  ('Varanasi Cluster',     'Varanasi, Uttar Pradesh', 'India', 25.3176, 82.9739, 'Primary Banarasi silk weaving cluster'),
+  ('Murshidabad Cluster',  'Murshidabad, West Bengal', 'India', 24.1800, 88.2667, 'Renowned for Jamdani and fine Murshidabad silk'),
+  ('Chanderi Cluster',     'Chanderi, Madhya Pradesh', 'India', 24.7132, 78.1419, 'Home of lightweight Chanderi silk-cotton');

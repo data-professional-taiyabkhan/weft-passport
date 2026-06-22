@@ -1,36 +1,56 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+import type { Database } from '@/types/database';
 
-// Routes that require authentication
 const PROTECTED_ROUTES = ['/dashboard', '/brand', '/admin', '/coordinator', '/onboarding'];
-// Routes only for unauthenticated users
-const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
+const AUTH_ROUTES = ['/login', '/register', '/signup', '/forgot-password'];
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-  const { data: { session } } = await supabase.auth.getSession();
+  let res = NextResponse.next({ request: req });
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          res = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // getUser() revalidates the token with the Supabase Auth server (safer than getSession()).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const path = req.nextUrl.pathname;
 
-  // Redirect authenticated users away from auth pages
-  if (session && AUTH_ROUTES.some(r => path.startsWith(r))) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  if (user && AUTH_ROUTES.some((r) => path.startsWith(r))) {
+    const redirect = NextResponse.redirect(new URL('/dashboard', req.url));
+    res.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
   }
 
-  // Redirect unauthenticated users away from protected pages
-  if (!session && PROTECTED_ROUTES.some(r => path.startsWith(r))) {
+  if (!user && PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('next', path);
-    return NextResponse.redirect(loginUrl);
+    const redirect = NextResponse.redirect(loginUrl);
+    res.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
   }
 
   return res;
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|p/|api/webhook).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|p/|api/webhook).*)'],
 };

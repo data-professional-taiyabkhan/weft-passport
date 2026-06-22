@@ -6,7 +6,6 @@ import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import ComplianceSection from '@/components/landing/ComplianceSection';
 import PricingSection from '@/components/landing/PricingSection';
-import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CTASection from '@/components/landing/CTASection';
 
 export default function HomePage() {
@@ -19,7 +18,6 @@ export default function HomePage() {
       <FeaturesSection />
       <ComplianceSection />
       <PricingSection />
-      <TestimonialsSection />
       <CTASection />
       <Footer />
     </main>

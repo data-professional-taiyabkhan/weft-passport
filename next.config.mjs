@@ -13,6 +13,13 @@ const nextConfig = {
   // issues in the AI-generated code don't block the first deploy.
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  async redirects() {
+    return [
+      // "Field capture" is linked as /dashboard/field across the marketing
+      // site; the actual route is /dashboard/capture.
+      { source: '/dashboard/field', destination: '/dashboard/capture', permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

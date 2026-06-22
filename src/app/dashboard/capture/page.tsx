@@ -140,10 +140,10 @@ export default function FieldCapturePage() {
           )}
 
           <div className="flex gap-3 mt-6">
-            <button onClick={handleCapture} disabled={loading} className="btn-primary">
+            <button type="button" onClick={handleCapture} disabled={loading} className="btn-primary">
               {loading ? 'Saving…' : '✓ Save Record'}
             </button>
-            <button onClick={()=>{setCaptureType(null);setStep(0);setForm({});}} className="btn-ghost">Cancel</button>
+            <button type="button" onClick={()=>{setCaptureType(null);setStep(0);setForm({});}} className="btn-ghost">Cancel</button>
           </div>
         </div>
       )}

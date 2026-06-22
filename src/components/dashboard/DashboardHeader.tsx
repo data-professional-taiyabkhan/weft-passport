@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -27,14 +28,12 @@ export default function DashboardHeader({ profile }: { profile: any }) {
             {profile?.full_name?.[0] ?? 'U'}
           </div>
           <div className="hidden sm:block">
-            <div className="text-sm font-semibold text-weft-text leading-tight">{profile?.full_name ?? 'User'}</div>
+            <div className="text-sm font-semibold text-weft-charcoal leading-tight">{profile?.full_name ?? 'User'}</div>
             <div className="text-xs text-gray-400">{profile?.organisation ?? profile?.email}</div>
           </div>
         </div>
-        <button onClick={handleSignOut} className="btn-ghost text-xs px-3 py-1.5">Sign out</button>
+        <button type="button" onClick={handleSignOut} className="btn-ghost text-xs px-3 py-1.5">Sign out</button>
       </div>
     </header>
   );
 }
-
-import Link from 'next/link';

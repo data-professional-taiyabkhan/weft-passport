@@ -11,18 +11,35 @@ const config: Config = {
       colors: {
         // Weft Passport Brand Palette — Heritage & Craft
         weft: {
-          ivory:     '#F9F5EE',  // Background cream
-          sand:      '#E8DCC8',  // Card backgrounds
-          loom:      '#C4A882',  // Accent warm tan
-          terracotta:'#B85C38',  // CTA / Highlights
-          indigo:    '#2D4A7A',  // Primary brand deep blue
+          ivory:        '#F9F5EE',  // Background cream
+          sand:         '#E8DCC8',  // Card backgrounds / borders
+          loom:         '#C4A882',  // Accent warm tan
+          terracotta:   '#B85C38',  // CTA / Highlights
+          indigo:       '#2D4A7A',  // Primary brand deep blue
           'indigo-light': '#3D5F96',
           'indigo-dark':  '#1E3358',
-          silk:      '#8B6F5E',  // Secondary warm brown
-          moss:      '#4A5E40',  // Eco / artisan verified green
-          gold:      '#C9A227',  // Premium / certified badge
-          charcoal:  '#2C2C2C',  // Body text
-          muted:     '#6B7280',  // Muted text
+          silk:         '#8B6F5E',  // Secondary warm brown
+          moss:         '#4A5E40',  // Eco / artisan verified green
+          gold:         '#C9A227',  // Premium / certified badge
+          charcoal:     '#2C2C2C',  // Body text
+          muted:        '#6B7280',  // Muted text
+          // Semantic aliases used throughout components
+          text:         '#2C2C2C',  // alias → charcoal
+          border:       '#E8DCC8',  // alias → sand
+        },
+        // Cream shades (alias of weft-ivory family)
+        cream: {
+          50:  '#FDFBF7',
+          100: '#F9F5EE',
+          200: '#E8DCC8',
+        },
+        // Saffron – sidebar active state, notification dot
+        saffron: {
+          400: '#F59E0B',
+        },
+        // Earth – artisan avatar placeholder
+        earth: {
+          100: '#F5EDE0',
         },
       },
       fontFamily: {
@@ -34,11 +51,14 @@ const config: Config = {
         'heritage-gradient': 'linear-gradient(135deg, #2D4A7A 0%, #1E3358 50%, #B85C38 100%)',
         'ivory-gradient':    'linear-gradient(180deg, #F9F5EE 0%, #E8DCC8 100%)',
         'loom-gradient':     'linear-gradient(135deg, #C4A882 0%, #8B6F5E 100%)',
+        // Alias used in login panel
+        'gradient-weft':     'linear-gradient(135deg, #2D4A7A 0%, #1E3358 50%, #B85C38 100%)',
       },
       boxShadow: {
-        'heritage': '0 4px 24px rgba(45, 74, 122, 0.12)',
-        'card':     '0 2px 16px rgba(44, 44, 44, 0.08)',
-        'gold':     '0 4px 20px rgba(201, 162, 39, 0.25)',
+        'heritage':  '0 4px 24px rgba(45, 74, 122, 0.12)',
+        'card':      '0 2px 16px rgba(44, 44, 44, 0.08)',
+        'gold':      '0 4px 20px rgba(201, 162, 39, 0.25)',
+        'weft-lg':   '0 8px 32px rgba(45, 74, 122, 0.18)',
       },
       animation: {
         'fade-up':    'fadeUp 0.6s ease-out',

@@ -46,3 +46,42 @@ export function statusColor(status: string) {
   }
   return map[status] ?? 'muted'
 }
+
+// Alias expected by batches/new/page.tsx and capture/page.tsx
+export const generateBatchCode = generateBatchRef;
+
+export function generateArtisanCode(cluster: string = 'BNS') {
+  const year = new Date().getFullYear()
+  const seq = Math.floor(Math.random() * 9000) + 1000
+  return `ART-${year}-${cluster.toUpperCase().slice(0,3)}-${seq}`
+}
+
+export function generateLoomCode(cluster: string = 'BNS') {
+  const year = new Date().getFullYear()
+  const seq = Math.floor(Math.random() * 9000) + 1000
+  return `LOM-${year}-${cluster.toUpperCase().slice(0,3)}-${seq}`
+}
+
+export function getArtisanStatusColor(status: string): string {
+  const map: Record<string, string> = {
+    pending:      'bg-yellow-100 text-yellow-700',
+    under_review: 'bg-purple-100 text-purple-700',
+    verified:     'bg-green-100 text-green-700',
+    field_verified:'bg-indigo-100 text-indigo-700',
+    certified:    'bg-green-100 text-green-700',
+    rejected:     'bg-red-100 text-red-700',
+  }
+  return map[status] ?? 'bg-gray-100 text-gray-700'
+}
+
+export function getBatchStatusColor(status: string): string {
+  const map: Record<string, string> = {
+    draft:         'bg-gray-100 text-gray-700',
+    submitted:     'bg-blue-100 text-blue-700',
+    field_verified:'bg-indigo-100 text-indigo-700',
+    certified:     'bg-green-100 text-green-700',
+    rejected:      'bg-red-100 text-red-700',
+    pending:       'bg-yellow-100 text-yellow-700',
+  }
+  return map[status] ?? 'bg-gray-100 text-gray-700'
+}

@@ -94,6 +94,21 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
+  /* Outline button */
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-4 py-2 border border-weft-sand text-weft-charcoal
+           font-medium rounded-lg hover:bg-weft-sand transition-all duration-200;
+  }
+
+  /* Base badge + variants */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-draft {
+    @apply bg-gray-100 text-gray-700;
+  }
+
   /* Heritage divider */
   .heritage-divider {
     @apply flex items-center gap-4 my-8;

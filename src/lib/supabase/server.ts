@@ -26,3 +26,6 @@ export function createServerSupabaseClient() {
     }
   );
 }
+
+// Alias used throughout dashboard pages
+export const createClient = createServerSupabaseClient;

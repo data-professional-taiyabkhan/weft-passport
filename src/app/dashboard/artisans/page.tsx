@@ -1,6 +1,13 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  verified: { label: 'Verified', cls: 'certified' },
+  pending: { label: 'Pending', cls: 'allocated' },
+  under_review: { label: 'Under review', cls: 'allocated' },
+  rejected: { label: 'Rejected', cls: 'draft' },
+}
+
 export default async function ArtisansPage() {
   const supabase = createClient()
   const { data: artisans } = await supabase
@@ -9,72 +16,72 @@ export default async function ArtisansPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  const statusColour: Record<string, string> = {
-    verified: 'bg-green-100 text-green-700',
-    pending: 'bg-yellow-100 text-yellow-700',
-    under_review: 'bg-purple-100 text-purple-700',
-    rejected: 'bg-red-100 text-red-700',
-  }
-
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1B1464] font-serif">Artisan Registry</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">{artisans?.length ?? 0} registered artisans</p>
-        </div>
-        <Link href="/dashboard/artisans/new"
-          className="bg-[#1B1464] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#231A7A] transition-colors">
-          + Register Artisan
-        </Link>
+    <div>
+      <div className="page-head">
+        <div className="ey">Registry</div>
+        <h1>Artisan Registry</h1>
+        <p>{artisans?.length ?? 0} registered artisans across your sourcing clusters.</p>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <Link href="/dashboard/artisans/new" className="btn btn-primary btn-sm">+ Register Artisan</Link>
       </div>
 
       {(!artisans || artisans.length === 0) ? (
-        <div className="bg-white rounded-2xl border border-[#E5E0D8] p-12 text-center">
-          <div className="text-5xl mb-4">🧵</div>
-          <h3 className="font-bold text-[#1B1464] text-lg mb-2">No artisans yet</h3>
-          <p className="text-[#6B7280] text-sm mb-5">Register your first artisan to start building provenance records.</p>
-          <Link href="/dashboard/artisans/new"
-            className="inline-flex bg-[#1B1464] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#231A7A] transition-colors">
-            Register First Artisan
-          </Link>
+        <div className="empty">
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🧵</div>
+          <p><b>No artisans yet.</b> Register your first artisan to start building provenance records.</p>
+          <Link href="/dashboard/artisans/new" className="btn btn-primary" style={{ marginTop: 16 }}>Register First Artisan</Link>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#FAF7F2] border-b border-[#E5E0D8]">
+        <div className="panel">
+          <div className="panel-b" style={{ paddingTop: 6 }}>
+            <table>
+              <thead>
                 <tr>
-                  {['Code', 'Name', 'Location', 'Specialisation', 'Experience', 'Status'].map(h => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{h}</th>
-                  ))}
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Location</th>
+                  <th>Specialisation</th>
+                  <th>Experience</th>
+                  <th>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F3EFE8]">
-                {artisans.map(a => (
-                  <tr key={a.id} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">
-                      <Link href={`/dashboard/artisans/${a.id}`} className="hover:underline">{a.artisan_id_code}</Link>
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">
-                      <Link href={`/dashboard/artisans/${a.id}`} className="hover:underline">{a.full_name}</Link>
-                    </td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">
-                      {[a.village, a.district, a.state].filter(Boolean).join(', ') || '—'}
-                    </td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">
-                      {a.specialisation?.slice(0, 2).join(', ') || '—'}
-                    </td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">
-                      {a.years_experience ? `${a.years_experience} yrs` : '—'}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColour[a.verification_status] || 'bg-gray-100 text-gray-500'}`}>
-                        {a.verification_status?.replace('_', ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {artisans.map(a => {
+                  const st = STATUS_MAP[a.verification_status] || { label: a.verification_status || '—', cls: 'draft' }
+                  return (
+                    <tr key={a.id} className="clickable">
+                      <td>
+                        <Link href={`/dashboard/artisans/${a.id}`}>
+                          <span className="mono" style={{ fontWeight: 600, color: 'var(--indigo)', background: 'var(--blue-soft)', padding: '3px 8px', borderRadius: 6 }}>
+                            {a.artisan_id_code}
+                          </span>
+                        </Link>
+                      </td>
+                      <td>
+                        <Link href={`/dashboard/artisans/${a.id}`}>
+                          <div className="tname">{a.full_name}</div>
+                        </Link>
+                      </td>
+                      <td style={{ color: 'var(--muted)', fontSize: 13 }}>
+                        {[a.village, a.district, a.state].filter(Boolean).join(', ') || '—'}
+                      </td>
+                      <td style={{ color: 'var(--muted)', fontSize: 13 }}>
+                        {a.specialisation?.slice(0, 2).join(', ') || '—'}
+                      </td>
+                      <td className="mono" style={{ color: 'var(--muted)' }}>
+                        {a.years_experience ? `${a.years_experience} yrs` : '—'}
+                      </td>
+                      <td>
+                        <span className={`pill ${st.cls}`}>
+                          <span className="d" />{st.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

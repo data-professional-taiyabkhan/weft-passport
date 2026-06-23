@@ -9,65 +9,64 @@ export default async function SKUsPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  const statusColour: Record<string, string> = {
-    active: 'bg-green-100 text-green-700',
-    inactive: 'bg-gray-100 text-gray-500',
-  }
-
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1B1464] font-serif">SKU Registry</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">{skus?.length ?? 0} product SKUs</p>
-        </div>
-        <Link href="/dashboard/skus/new"
-          className="bg-[#1B1464] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#231A7A] transition-colors">
-          + Add SKU
-        </Link>
+    <div>
+      <div className="page-head">
+        <div className="ey">Products</div>
+        <h1>SKU Registry</h1>
+        <p>{skus?.length ?? 0} product SKUs mapped to certified batches.</p>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <Link href="/dashboard/skus/new" className="btn btn-primary btn-sm">+ Add SKU</Link>
       </div>
 
       {(!skus || skus.length === 0) ? (
-        <div className="bg-white rounded-2xl border border-[#E5E0D8] p-12 text-center">
-          <div className="text-5xl mb-4">🏷️</div>
-          <h3 className="font-bold text-[#1B1464] text-lg mb-2">No SKUs yet</h3>
-          <p className="text-[#6B7280] text-sm mb-5">Add product SKUs to map them to certified batches and generate QR codes.</p>
-          <Link href="/dashboard/skus/new"
-            className="inline-flex bg-[#1B1464] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#231A7A] transition-colors">
-            Add First SKU
-          </Link>
+        <div className="empty">
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🏷️</div>
+          <p><b>No SKUs yet.</b> Add product SKUs to map them to certified batches and generate QR codes.</p>
+          <Link href="/dashboard/skus/new" className="btn btn-primary" style={{ marginTop: 16 }}>Add First SKU</Link>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#FAF7F2] border-b border-[#E5E0D8]">
+        <div className="panel">
+          <div className="panel-b" style={{ paddingTop: 6 }}>
+            <table>
+              <thead>
                 <tr>
-                  {['SKU Code', 'Product Name', 'Category', 'Status', 'Created', 'QR'].map(h => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{h}</th>
-                  ))}
+                  <th>SKU Code</th>
+                  <th>Product Name</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F3EFE8]">
+              <tbody>
                 {skus.map(s => (
-                  <tr key={s.id} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">
-                      <Link href={`/dashboard/skus/${s.id}`} className="hover:underline">{s.sku_code}</Link>
+                  <tr key={s.id} className="clickable">
+                    <td>
+                      <Link href={`/dashboard/skus/${s.id}`}>
+                        <span className="mono" style={{ fontWeight: 600, color: 'var(--indigo)', background: 'var(--blue-soft)', padding: '3px 8px', borderRadius: 6 }}>
+                          {s.sku_code}
+                        </span>
+                      </Link>
                     </td>
-                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">
-                      <Link href={`/dashboard/skus/${s.id}`} className="hover:underline">{s.product_name}</Link>
+                    <td>
+                      <Link href={`/dashboard/skus/${s.id}`}>
+                        <div className="tname">{s.product_name}</div>
+                      </Link>
                     </td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">{s.product_category || '—'}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${s.active ? statusColour.active : statusColour.inactive}`}>
-                        {s.active ? 'active' : 'inactive'}
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>{s.product_category || '—'}</td>
+                    <td>
+                      <span className={`pill ${s.active ? 'certified' : 'draft'}`}>
+                        <span className="d" />{s.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">
-                      {new Date(s.created_at).toLocaleDateString('en-GB')}
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>
+                      {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="px-5 py-4">
-                      <Link href={`/dashboard/qr-codes?sku=${s.id}`} className="text-[#1B1464] text-xs font-semibold hover:underline">Generate QR</Link>
+                    <td style={{ textAlign: 'right' }}>
+                      <Link href={`/dashboard/qr-codes?sku=${s.id}`} className="btn btn-ghost btn-sm">Generate QR</Link>
                     </td>
                   </tr>
                 ))}

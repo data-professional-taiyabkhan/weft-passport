@@ -1,12 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { getBatchStatusColor } from '@/lib/utils';
 
-const FILTERS: { label: string; value: string }[] = [
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  certified: { label: 'Certified', cls: 'certified' },
+  field_verified: { label: 'Field verified', cls: 'available' },
+  submitted: { label: 'Submitted', cls: 'allocated' },
+  draft: { label: 'Draft', cls: 'draft' },
+  rejected: { label: 'Rejected', cls: 'draft' },
+};
+
+const FILTERS = [
   { label: 'All', value: '' },
   { label: 'Draft', value: 'draft' },
   { label: 'Submitted', value: 'submitted' },
-  { label: 'Field Verified', value: 'field_verified' },
+  { label: 'Field verified', value: 'field_verified' },
   { label: 'Certified', value: 'certified' },
   { label: 'Rejected', value: 'rejected' },
 ];
@@ -24,69 +31,82 @@ export default async function BatchesPage({ searchParams }: { searchParams: { st
   const { data: batches } = await query;
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif text-indigo-900">Production Batches</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage and track all certified textile batches</p>
-        </div>
-        <Link href="/dashboard/batches/new" className="btn-primary">➕ New Batch</Link>
+    <div>
+      <div className="page-head">
+        <div className="ey">Supply</div>
+        <h1>Production Batches</h1>
+        <p>Manage and track all certified textile batches across your supply chain.</p>
       </div>
 
-      {/* Filters */}
-      <div className="card mb-6">
-        <div className="flex flex-wrap gap-3">
-          {FILTERS.map(f => (
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+        {FILTERS.map(f => {
+          const isActive = active === f.value;
+          return (
             <Link key={f.label}
               href={f.value ? `/dashboard/batches?status=${f.value}` : '/dashboard/batches'}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                active === f.value ? 'bg-indigo-900 text-white' : 'bg-cream-200 text-gray-600 hover:bg-indigo-50'
-              }`}>{f.label}</Link>
-          ))}
-        </div>
+              className={`pill ${isActive ? 'certified' : 'draft'}`}
+              style={isActive ? {} : { cursor: 'pointer' }}>
+              <span className="d" />
+              {f.label}
+            </Link>
+          );
+        })}
+        <Link href="/dashboard/batches/new" className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>
+          + New Batch
+        </Link>
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-cream-100 border-b border-weft-border">
+      <div className="panel">
+        <div className="panel-b" style={{ paddingTop: 6 }}>
+          <table>
+            <thead>
               <tr>
-                {['Batch Code','Textile Type','Artisan','Cluster','Status','Certified','Actions'].map(h=>(
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                ))}
+                <th>Batch ID</th>
+                <th>Textile</th>
+                <th>Artisan</th>
+                <th>Cluster</th>
+                <th>Status</th>
+                <th>Certified</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-weft-border">
-              {batches && batches.length > 0 ? batches.map((b: any) => (
-                <tr key={b.id} className="hover:bg-cream-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">{b.batch_id_code}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-weft-text">{b.textile_name}</td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-weft-text">{b.artisans?.full_name ?? '—'}</div>
-                    <div className="text-xs text-gray-400">{b.artisans?.artisan_id_code}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{b.clusters?.name ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`badge ${getBatchStatusColor(b.status)}`}>{b.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{b.certified_at ? new Date(b.certified_at).toLocaleDateString('en-GB') : '—'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Link href={`/dashboard/batches/${b.id}`} className="text-xs text-indigo-600 hover:underline">View</Link>
-                      {b.qr_code_url && <Link href={`/passport/${b.id}`} className="text-xs text-green-600 hover:underline">Passport</Link>}
-                    </div>
+            <tbody>
+              {batches && batches.length > 0 ? batches.map((b: any) => {
+                const st = STATUS_MAP[b.status] || { label: b.status, cls: 'draft' };
+                return (
+                  <tr key={b.id} className="clickable">
+                    <td><span className="mono" style={{ fontWeight: 600, color: 'var(--indigo)', background: 'var(--blue-soft)', padding: '3px 8px', borderRadius: 6 }}>{b.batch_id_code}</span></td>
+                    <td>
+                      <div className="tname">{b.textile_name}</div>
+                    </td>
+                    <td>
+                      <div className="tname">{b.artisans?.full_name ?? '—'}</div>
+                      <div className="tsub mono">{b.artisans?.artisan_id_code}</div>
+                    </td>
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>{b.clusters?.name ?? '—'}</td>
+                    <td><span className={`pill ${st.cls}`}><span className="d" />{st.label}</span></td>
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>{b.certified_at ? new Date(b.certified_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <Link href={`/dashboard/batches/${b.id}`} className="btn btn-ghost btn-sm">View</Link>
+                        {b.status === 'certified' && (
+                          <Link href={`/passport/${b.provenance_page_slug || b.id}`} className="btn btn-ghost btn-sm" style={{ color: 'var(--green)' }}>Passport</Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>📦</div>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>No batches yet</div>
+                    <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>Create your first production batch to get started</div>
+                    <Link href="/dashboard/batches/new" className="btn btn-primary">Create first batch</Link>
                   </td>
                 </tr>
-              )) : (
-                <tr><td colSpan={7} className="px-4 py-16 text-center">
-                  <div className="text-4xl mb-3">📦</div>
-                  <p className="text-gray-500 font-medium">No batches yet</p>
-                  <p className="text-gray-400 text-sm mt-1">Create your first production batch to get started</p>
-                  <Link href="/dashboard/batches/new" className="btn-primary mt-4 inline-flex">Create first batch</Link>
-                </td></tr>
               )}
             </tbody>
           </table>

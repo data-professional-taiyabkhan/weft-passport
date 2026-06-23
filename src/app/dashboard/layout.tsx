@@ -17,14 +17,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const role = profile?.role ?? 'brand';
 
   return (
-    <div className="min-h-screen bg-cream-100 flex">
+    <div className="app">
       <Sidebar role={role} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <main className="main">
         <DashboardHeader profile={profile} />
-        <main className="flex-1 p-6 overflow-auto">
+        <div className="content">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

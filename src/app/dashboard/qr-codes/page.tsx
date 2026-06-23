@@ -39,7 +39,7 @@ export default function QRCodesPage() {
     const slug = batch.provenance_page_slug || batch.id
     const url = `${appUrl}/passport/${slug}`
     setPassportUrl(url)
-    setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}&margin=12&color=1B1464`)
+    setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}&margin=12&color=243b6b`)
     setSelectedBatch(batchId)
   }
 
@@ -47,61 +47,70 @@ export default function QRCodesPage() {
   const pendingBatches = batches.filter(b => b.status === 'field_verified')
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1B1464] font-serif">QR Code Generator</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">Generate scannable QR codes that link to a product&apos;s public provenance passport</p>
+    <div>
+      <div className="page-head">
+        <div className="ey">Outputs</div>
+        <h1>Provenance pages &amp; QR codes</h1>
+        <p>Generate scannable QR codes that link to a product&apos;s public provenance passport. Print on labels, swing tags, or packaging.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="hint-inline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div>Only <b>certified batches</b> can generate QR codes. Each QR links to a consumer-facing provenance page showing the artisan, origin, and compliance credentials.</div>
+      </div>
+
+      <div className="two">
         {/* Batch list */}
-        <div>
-          <div className="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E0D8] bg-[#FAF7F2]">
-              <h2 className="text-sm font-bold text-[#1B1464] uppercase tracking-wide">Certified Batches ({certifiedBatches.length})</h2>
-              <p className="text-xs text-[#6B7280] mt-0.5">Click to generate QR code</p>
-            </div>
+        <div className="panel">
+          <div className="panel-h">
+            <h2>Certified batches ({certifiedBatches.length})</h2>
+          </div>
+          <div className="panel-b" style={{ paddingTop: 6 }}>
             {loading ? (
-              <div className="p-6 text-center text-[#6B7280] text-sm">Loading batches...</div>
+              <div style={{ textAlign: 'center', color: 'var(--muted-soft)', padding: 32 }}>Loading batches…</div>
             ) : certifiedBatches.length === 0 ? (
-              <div className="p-6 text-center text-[#6B7280] text-sm">No certified batches yet</div>
-            ) : (
-              <div className="divide-y divide-[#E5E0D8]">
-                {certifiedBatches.map(batch => (
-                  <button
-                    key={batch.id}
-                    onClick={() => generateQR(batch.id)}
-                    className={`w-full text-left px-5 py-3.5 hover:bg-[#FAF7F2] transition-colors flex items-center justify-between ${
-                      selectedBatch === batch.id ? 'bg-[#1B1464]/5 border-l-4 border-[#1B1464]' : ''
-                    }`}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-[#1A1A2E]">{batch.textile_name}</p>
-                      <p className="text-xs font-mono text-[#6B7280] mt-0.5">{batch.batch_id_code}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">Certified</span>
-                      <span className="text-[#1B1464] text-lg">→</span>
-                    </div>
-                  </button>
-                ))}
+              <div className="empty">
+                <p>No certified batches yet. Certify a batch to generate QR codes.</p>
               </div>
+            ) : (
+              <table>
+                <thead><tr><th>Product</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  {certifiedBatches.map(batch => (
+                    <tr key={batch.id} className="clickable" onClick={() => generateQR(batch.id)}
+                      style={selectedBatch === batch.id ? { background: 'var(--blue-soft)' } : {}}>
+                      <td>
+                        <div className="tname">{batch.textile_name}</div>
+                        <div className="tsub mono">{batch.batch_id_code}</div>
+                      </td>
+                      <td><span className="pill certified"><span className="d" />Certified</span></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); generateQR(batch.id); }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M21 21v-3h-3"/></svg>
+                          QR
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 
           {pendingBatches.length > 0 && (
-            <div className="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden mt-4">
-              <div className="px-5 py-3 border-b border-[#E5E0D8]">
-                <h3 className="text-xs font-bold text-[#F4A300] uppercase tracking-wide">Awaiting Certification ({pendingBatches.length})</h3>
+            <div style={{ borderTop: '1px solid var(--line)', padding: '12px 18px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: 1.6, textTransform: 'uppercase' as const, color: 'var(--amber)', fontWeight: 600, marginBottom: 8 }}>
+                Awaiting certification ({pendingBatches.length})
               </div>
-              <div className="divide-y divide-[#E5E0D8]">
-                {pendingBatches.map(batch => (
-                  <div key={batch.id} className="px-5 py-3 opacity-60">
-                    <p className="text-sm text-[#1A1A2E]">{batch.textile_name}</p>
-                    <p className="text-xs font-mono text-[#9CA3AF] mt-0.5">{batch.batch_id_code}</p>
+              {pendingBatches.map(batch => (
+                <div key={batch.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', opacity: 0.6 }}>
+                  <div>
+                    <div className="tname" style={{ fontSize: 13 }}>{batch.textile_name}</div>
+                    <div className="tsub mono">{batch.batch_id_code}</div>
                   </div>
-                ))}
-              </div>
+                  <span className="pill allocated"><span className="d" />Pending</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -109,70 +118,57 @@ export default function QRCodesPage() {
         {/* QR Display */}
         <div>
           {qrUrl ? (
-            <div className="bg-white rounded-2xl border border-[#E5E0D8] p-6 flex flex-col items-center gap-5">
-              <div className="text-center">
-                <p className="text-sm font-semibold text-[#1B1464] mb-0.5">
+            <div className="panel" style={{ position: 'sticky', top: 88 }}>
+              <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase' as const, color: 'var(--zari)', fontWeight: 600 }}>
+                  Consumer QR code
+                </div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 600, marginTop: 3 }}>
                   {batches.find(b => b.id === selectedBatch)?.textile_name}
-                </p>
-                <p className="text-xs font-mono text-[#6B7280]">
-                  {batches.find(b => b.id === selectedBatch)?.batch_id_code}
-                </p>
-              </div>
-
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrUrl} alt="QR Code" className="w-56 h-56 rounded-xl border-2 border-[#E5E0D8] shadow-lg" />
-                <div className="absolute -bottom-2 -right-2 bg-[#1B1464] text-white text-xs px-2 py-1 rounded-lg font-semibold shadow">
-                  WP
                 </div>
               </div>
 
-              <div className="text-center">
-                <p className="text-sm font-semibold text-[#1A1A2E] mb-1">Scan to view provenance passport</p>
-                <p className="text-[#6B7280] text-xs font-mono break-all max-w-xs">{passportUrl}</p>
+              <div style={{ padding: 24, textAlign: 'center' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrUrl} alt="QR Code"
+                  style={{ width: 188, height: 188, margin: '0 auto 16px', background: '#fff', border: '1px solid var(--line)', borderRadius: 16, padding: 14 }} />
+
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--indigo)', background: 'var(--blue-soft)', border: '1px solid #d8e1f3', borderRadius: 9, padding: '9px 12px', wordBreak: 'break-all' as const, marginBottom: 6 }}>
+                  {passportUrl}
+                </div>
               </div>
 
-              <div className="flex gap-3 w-full">
-                <a href={qrUrl} download={`weft-passport-qr-${batches.find(b => b.id === selectedBatch)?.batch_id_code}.png`}
-                  className="flex-1 bg-[#F4A300] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#D4920A] transition-colors text-center">
-                  Download PNG
+              <div style={{ padding: '8px 24px 22px', display: 'flex', gap: 10 }}>
+                <a href={qrUrl} download={`weft-qr-${batches.find(b => b.id === selectedBatch)?.batch_id_code}.png`}
+                  className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  Download
                 </a>
                 <button onClick={() => navigator.clipboard.writeText(passportUrl)}
-                  className="flex-1 border border-[#E5E0D8] text-[#1B1464] px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#FAF7F2] transition-colors">
-                  Copy Link
+                  className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>
+                  Copy link
                 </button>
               </div>
 
-              <a href={passportUrl} target="_blank" rel="noopener noreferrer"
-                className="w-full border border-[#1B1464] text-[#1B1464] px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#1B1464] hover:text-white transition-colors text-center">
-                Preview Passport Page →
-              </a>
+              <div style={{ padding: '0 24px 22px' }}>
+                <a href={passportUrl} target="_blank" rel="noopener noreferrer"
+                  className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
+                  Preview provenance page →
+                </a>
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#E5E0D8] p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
-              <div className="w-20 h-20 rounded-2xl bg-[#1B1464]/10 flex items-center justify-center text-3xl mb-4">📱</div>
-              <h3 className="text-lg font-bold text-[#1A1A2E] mb-2">Select a batch to generate QR</h3>
-              <p className="text-[#6B7280] text-sm max-w-xs">Choose a certified batch from the list. The QR code links to the product&apos;s public provenance passport that consumers can scan.</p>
+            <div className="panel" style={{ padding: 40, textAlign: 'center' }}>
+              <div style={{ width: 64, height: 64, borderRadius: 50, background: 'radial-gradient(circle at 50% 35%, #2c4884, #1b2e58)', display: 'grid', placeItems: 'center', margin: '0 auto 18px', boxShadow: '0 10px 26px rgba(27,46,88,.34)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--zari-bright)" strokeWidth="1.7"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M21 21v-3h-3"/></svg>
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600, margin: '0 0 8px' }}>Select a batch to generate QR</h3>
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5, maxWidth: 280, margin: '0 auto' }}>
+                Choose a certified batch from the list. The QR code links to the product&apos;s public provenance passport.
+              </p>
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-6 bg-[#1B1464]/5 border border-[#1B1464]/15 rounded-xl px-5 py-4">
-        <p className="text-[#1B1464] text-xs font-semibold uppercase tracking-wide mb-1">How it works</p>
-        <ol className="space-y-1">
-          {[
-            'Select a certified batch from the list — only certified batches can generate QR codes',
-            'Download the QR code and print it on your product label, swing tag, or packaging',
-            'Consumers scan it with their phone camera to see the artisan story, origin, and certification',
-            'Each scan is tracked — see analytics on your dashboard',
-          ].map((step, i) => (
-            <li key={i} className="flex gap-2 text-sm text-[#1A1A2E]">
-              <span className="text-[#F4A300] font-bold shrink-0">{i + 1}.</span>
-              {step}
-            </li>
-          ))}
-        </ol>
       </div>
     </div>
   )

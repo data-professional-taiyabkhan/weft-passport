@@ -1,79 +1,70 @@
 import Link from 'next/link'
 import { signUp } from '@/app/actions/auth'
 
+function BrandMark() {
+  return (
+    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '22px' }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '1.5px solid var(--zari)', display: 'grid', placeItems: 'center', color: 'var(--indigo-deep)', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 13, background: 'rgba(194,147,47,.08)' }}>WP</div>
+      <div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>Weft Passport</div>
+        <div style={{ fontSize: '9.5px', letterSpacing: '1.6px', textTransform: 'uppercase', color: 'var(--muted)' }}>Provenance Certification</div>
+      </div>
+    </Link>
+  )
+}
+
+function Alert({ kind, children }: { kind: 'error' | 'ok'; children: React.ReactNode }) {
+  const style = kind === 'error'
+    ? { background: '#f7e9e6', border: '1px solid #e3c0b8', color: '#86392a' }
+    : { background: 'var(--green-soft)', border: '1px solid #bfdcc9', color: '#235e3a' }
+  return <div style={{ ...style, borderRadius: '10px', padding: '11px 13px', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5 }}>{children}</div>
+}
+
 export default function RegisterPage({
   searchParams,
 }: {
   searchParams: { error?: string; message?: string }
 }) {
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-[#1B1464] flex items-center justify-center text-[#F4A300] font-black">W</div>
-            <span className="font-bold text-[#1B1464]">Weft Passport</span>
+    <div className="login-wrap">
+      <div className="login-card">
+        <BrandMark />
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 600, margin: '0 0 4px' }}>Request access</h1>
+        <p style={{ color: 'var(--muted)', fontSize: '13.5px', margin: '0 0 22px' }}>Create your account to start a 60-day trial</p>
+
+        {searchParams.error && <Alert kind="error">{decodeURIComponent(searchParams.error)}</Alert>}
+        {searchParams.message && <Alert kind="ok">{decodeURIComponent(searchParams.message)}</Alert>}
+
+        <form action={signUp}>
+          <div className="field">
+            <label>Full name</label>
+            <input name="full_name" type="text" required placeholder="Mahjabeen Bano" />
           </div>
-          <h1 className="text-2xl font-bold text-[#1B1464] font-serif">Request Access</h1>
-          <p className="text-[#6B7280] text-sm mt-1">Create your account to get started</p>
+          <div className="field">
+            <label>Organisation / brand name</label>
+            <input name="organisation" type="text" placeholder="Silk and Soil" />
+          </div>
+          <div className="field">
+            <label>Email address</label>
+            <input name="email" type="email" required placeholder="you@brand.com" />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input name="password" type="password" required minLength={8} placeholder="Min. 8 characters" />
+          </div>
+          <div className="field">
+            <label>I am a</label>
+            <select name="role" defaultValue="brand">
+              <option value="brand">Fashion brand / buyer</option>
+              <option value="field_coordinator">Field coordinator / artisan partner</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Create account</button>
+        </form>
+
+        <div className="back-link">
+          Already have an account? <Link href="/login">Sign in</Link>
         </div>
-
-        {searchParams.error && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <p className="text-red-700 text-sm">{decodeURIComponent(searchParams.error)}</p>
-          </div>
-        )}
-        {searchParams.message && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-            <p className="text-green-700 text-sm">{decodeURIComponent(searchParams.message)}</p>
-          </div>
-        )}
-
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E5E0D8] p-6">
-          <form action={signUp} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-[#1A1A2E] mb-1.5">Full Name</label>
-              <input name="full_name" type="text" required
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white text-[#1A1A2E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B1464] focus:border-transparent"
-                placeholder="Mahjabeen Bano" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#1A1A2E] mb-1.5">Organisation / Brand Name</label>
-              <input name="organisation" type="text"
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white text-[#1A1A2E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B1464] focus:border-transparent"
-                placeholder="Silk and Soil" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#1A1A2E] mb-1.5">Email address</label>
-              <input name="email" type="email" required
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white text-[#1A1A2E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B1464] focus:border-transparent"
-                placeholder="you@brand.com" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#1A1A2E] mb-1.5">Password</label>
-              <input name="password" type="password" required minLength={8}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white text-[#1A1A2E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B1464] focus:border-transparent"
-                placeholder="Min. 8 characters" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#1A1A2E] mb-1.5">I am a</label>
-              <select name="role"
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white text-[#1A1A2E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B1464] focus:border-transparent">
-                <option value="brand">Fashion Brand / Buyer</option>
-                <option value="field_coordinator">Field Coordinator / Artisan Partner</option>
-              </select>
-            </div>
-            <button type="submit"
-              className="w-full bg-[#1B1464] text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-[#231A7A] transition-colors">
-              Create Account
-            </button>
-          </form>
-        </div>
-
-        <p className="mt-4 text-center text-sm text-[#6B7280]">
-          Already have an account?{' '}
-          <Link href="/login" className="text-[#1B1464] font-semibold hover:underline">Sign in</Link>
-        </p>
       </div>
     </div>
   )

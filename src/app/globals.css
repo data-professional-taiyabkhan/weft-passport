@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --ink: #16233f;
   --indigo: #243b6b;
@@ -713,6 +717,26 @@ tbody tr.clickable:hover { background: var(--surface-2); }
 .framework-card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
 .framework-card .date { font-family: var(--font-mono); font-size: 11px; color: var(--zari); font-weight: 600; }
 .framework-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* ── Base component classes (used by dashboard + forms) ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.input {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid var(--line-strong); border-radius: 10px;
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--surface); outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(36,59,107,.1); }
+.label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.btn-outline-dark {
+  background: transparent; color: var(--indigo); border: 1px solid var(--line-strong);
+}
+.btn-outline-dark:hover { background: var(--surface-2); }
 
 /* ── Timeline (about / compliance) ── */
 .timeline { position: relative; padding-left: 28px; }

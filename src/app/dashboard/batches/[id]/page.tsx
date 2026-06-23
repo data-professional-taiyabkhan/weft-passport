@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Clock, QrCode, FileText, MapPin } from 'lucide-react';
+import { submitBatch, certifyBatch } from '@/app/actions/batches';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -23,6 +24,11 @@ export default async function BatchDetailPage({ params }: { params: { id: string
 
   const { data: skus } = await supabase.from('skus').select('*').eq('batch_id', params.id);
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').maybeSingle();
+  const role = me?.role;
+  const canCertify = (role === 'admin' || role === 'coordinator') && ['submitted', 'field_verified'].includes(batch.status);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
@@ -38,6 +44,20 @@ export default async function BatchDetailPage({ params }: { params: { id: string
           <p className="text-gray-500 text-sm mt-1">{batch.textile_name} · {batch.technique?.replace('_',' ')} · {batch.clusters?.name ?? 'Unknown cluster'}</p>
         </div>
         <div className="flex gap-2">
+          {batch.status === 'draft' && (
+            <form action={submitBatch.bind(null, batch.id)}>
+              <button type="submit" className="btn-primary">
+                <Clock size={15} /> Submit for Certification
+              </button>
+            </form>
+          )}
+          {canCertify && (
+            <form action={certifyBatch.bind(null, batch.id)}>
+              <button type="submit" className="btn-primary">
+                <CheckCircle size={15} /> Certify Batch
+              </button>
+            </form>
+          )}
           {batch.status === 'certified' && (
             <Link href={`/passport/${batch.id}`} className="btn-secondary">
               <QrCode size={15} /> View Passport

@@ -9,17 +9,33 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
-  const [{ count: batchCount }, { count: artisanCount }, { count: skuCount }] = await Promise.all([
+  const [{ count: batchCount }, { count: artisanCount }, { count: skuCount }, { count: complianceCount }] = await Promise.all([
     supabase.from('batches').select('*', { count: 'exact', head: true }),
     supabase.from('artisans').select('*', { count: 'exact', head: true }),
     supabase.from('skus').select('*', { count: 'exact', head: true }),
+    supabase.from('compliance_documents').select('*', { count: 'exact', head: true }),
   ]);
+
+  // Get recent batches for activity feed
+  const { data: recentBatches } = await supabase
+    .from('batches')
+    .select('batch_id_code, textile_name, status, certified_at, created_at, artisans(full_name)')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Get first certified batch for passport preview link
+  const { data: certifiedBatch } = await supabase
+    .from('batches')
+    .select('id, provenance_page_slug')
+    .eq('status', 'certified')
+    .limit(1)
+    .maybeSingle();
 
   const stats = [
     { label: 'Total Batches', value: batchCount ?? 0, icon: '📦', color: 'bg-indigo-50', iconBg: 'bg-indigo-100', href: '/dashboard/batches' },
     { label: 'Verified Artisans', value: artisanCount ?? 0, icon: '🧵', color: 'bg-amber-50', iconBg: 'bg-amber-100', href: '/dashboard/artisans' },
     { label: 'Active SKUs', value: skuCount ?? 0, icon: '🏷️', color: 'bg-emerald-50', iconBg: 'bg-emerald-100', href: '/dashboard/skus' },
-    { label: 'Compliance Docs', value: 0, icon: '📋', color: 'bg-violet-50', iconBg: 'bg-violet-100', href: '/dashboard/compliance' },
+    { label: 'Compliance Docs', value: complianceCount ?? 0, icon: '📋', color: 'bg-violet-50', iconBg: 'bg-violet-100', href: '/dashboard/compliance' },
   ];
 
   return (
@@ -52,22 +68,24 @@ export default async function DashboardPage() {
         <div className="card">
           <h3 className="font-serif text-lg text-indigo-900 mb-4">Recent Activity</h3>
           <div className="space-y-3">
-            {[
-              { action: 'Batch WP-BTH-2026-0001 submitted for review', time: '2h ago', type: 'batch' },
-              { action: 'Artisan Ravi Kumar verified in Varanasi cluster', time: '5h ago', type: 'artisan' },
-              { action: 'Compliance export generated for ECGT', time: '1d ago', type: 'compliance' },
-              { action: 'New SKU SKU-0042 linked to certified batch', time: '2d ago', type: 'sku' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 py-2 border-b border-weft-border last:border-0">
-                <div className="w-8 h-8 rounded-lg bg-cream-200 flex items-center justify-center text-sm flex-shrink-0">
-                  {item.type==='batch'?'📦':item.type==='artisan'?'🧵':item.type==='compliance'?'📋':'🏷️'}
+            {(recentBatches || []).map((batch: any, i: number) => {
+              const statusMap: Record<string, string> = { certified: '✅ Certified', field_verified: '🔍 Field verified', submitted: '📤 Submitted for review', draft: '📝 Draft created' };
+              const artisan = batch.artisans as any;
+              const action = `${batch.batch_id_code} — ${statusMap[batch.status] || batch.status}${artisan?.full_name ? ` by ${artisan.full_name}` : ''}`;
+              const date = batch.certified_at || batch.created_at;
+              const timeAgo = date ? getTimeAgo(new Date(date)) : '';
+              return (
+                <div key={i} className="flex items-start gap-3 py-2 border-b border-weft-border last:border-0">
+                  <div className="w-8 h-8 rounded-lg bg-cream-200 flex items-center justify-center text-sm flex-shrink-0">
+                    {batch.status === 'certified' ? '📦' : batch.status === 'submitted' ? '📤' : '🧵'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-weft-text truncate">{action}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{timeAgo}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-weft-text truncate">{item.action}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -102,7 +120,7 @@ export default async function DashboardPage() {
             { label: 'New Batch', href: '/dashboard/batches/new', icon: '➕' },
             { label: 'Add SKU', href: '/dashboard/skus/new', icon: '🏷️' },
             { label: 'Export Compliance', href: '/dashboard/compliance/export', icon: '📤' },
-            { label: 'View Passport', href: '/passport/demo', icon: '🔍' },
+            { label: 'View Passport', href: certifiedBatch ? `/passport/${certifiedBatch.provenance_page_slug || certifiedBatch.id}` : '/dashboard/qr-codes', icon: '🔍' },
           ].map(a => (
             <Link key={a.label} href={a.href}
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-cream-100 hover:bg-indigo-50 border border-weft-border hover:border-indigo-300 transition-all text-sm font-medium text-weft-text">
@@ -114,4 +132,15 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
+}
+
+function getTimeAgo(date: Date): string {
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }

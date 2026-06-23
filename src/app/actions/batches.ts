@@ -71,7 +71,7 @@ export async function certifyBatch(batchId: string) {
     .eq('id', user.id)
     .single()
 
-  if (!profile || !['admin', 'field_coordinator'].includes(profile.role)) {
+  if (!profile || !['admin', 'coordinator'].includes(profile.role)) {
     return { error: 'Unauthorized' }
   }
 

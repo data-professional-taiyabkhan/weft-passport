@@ -35,9 +35,9 @@ const adminNav = [
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const nav = role === 'admin' ? adminNav : role === 'field_coordinator' ? fieldNav : brandNav;
-  const roleLabel = role === 'admin' ? 'Admin' : role === 'field_coordinator' ? 'Field Coordinator' : 'Brand Portal';
-  const roleBadgeColor = role === 'admin' ? 'bg-red-100 text-red-700' : role === 'field_coordinator' ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700';
+  const nav = role === 'admin' ? adminNav : role === 'coordinator' ? fieldNav : brandNav;
+  const roleLabel = role === 'admin' ? 'Admin' : role === 'coordinator' ? 'Field Coordinator' : 'Brand Portal';
+  const roleBadgeColor = role === 'admin' ? 'bg-red-100 text-red-700' : role === 'coordinator' ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700';
 
   return (
     <aside className="w-64 bg-indigo-950 flex flex-col min-h-screen flex-shrink-0">

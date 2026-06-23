@@ -56,7 +56,7 @@ export default function RegisterPage({
             <label>I am a</label>
             <select name="role" defaultValue="brand">
               <option value="brand">Fashion brand / buyer</option>
-              <option value="field_coordinator">Field coordinator / artisan partner</option>
+              <option value="coordinator">Field coordinator / artisan partner</option>
             </select>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Create account</button>

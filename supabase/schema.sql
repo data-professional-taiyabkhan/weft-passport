@@ -1,25 +1,26 @@
 -- ============================================================
--- WEFT PASSPORT — Database Schema (corrected, matches live DB)
+-- WEFT PASSPORT — Database Schema (idempotent / safe to re-run)
 -- Project ref: psjuehgawhpynvfftibu  (region eu-west-2)
--- Fixes vs original: removed unused postgis; is_admin() SECURITY DEFINER
--- to stop RLS recursion; handle_new_user() signup trigger; added the
--- missing RLS policies on clusters/coordinators/looms/skus/
--- compliance_documents/audit_logs (were RLS-enabled with zero policies).
+--
+-- This script can be run repeatedly without error: enum types are
+-- guarded, tables/indexes use IF NOT EXISTS, and triggers/policies are
+-- dropped before being recreated. Seed data only inserts when empty.
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TYPE user_role           AS ENUM ('admin', 'brand', 'coordinator', 'consumer');
-CREATE TYPE verification_status AS ENUM ('pending', 'verified', 'rejected', 'under_review');
-CREATE TYPE batch_status        AS ENUM ('draft', 'submitted', 'field_verified', 'certified', 'rejected');
-CREATE TYPE subscription_tier   AS ENUM ('trial', 'standard', 'premium', 'enterprise');
-CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled', 'trial');
-CREATE TYPE loom_type           AS ENUM ('pit_loom', 'frame_loom', 'jacquard', 'dobby', 'fly_shuttle', 'handloom_other');
-CREATE TYPE textile_technique   AS ENUM ('banarasi_silk', 'kantha', 'ikat', 'block_print', 'embroidery', 'jamdani', 'chanderi', 'other');
-CREATE TYPE compliance_framework AS ENUM ('eu_ecgt', 'eu_csddd', 'eu_dpp', 'uk_green_claims', 'gots', 'fair_trade');
-CREATE TYPE document_type       AS ENUM ('compliance_report', 'artisan_certificate', 'batch_certificate', 'audit_trail', 'qr_summary');
+-- ---- Enums (guarded so re-running does not error) ----
+DO $$ BEGIN CREATE TYPE user_role            AS ENUM ('admin', 'brand', 'coordinator', 'consumer'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE verification_status  AS ENUM ('pending', 'verified', 'rejected', 'under_review'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE batch_status         AS ENUM ('draft', 'submitted', 'field_verified', 'certified', 'rejected'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE subscription_tier    AS ENUM ('trial', 'standard', 'premium', 'enterprise'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE subscription_status  AS ENUM ('active', 'inactive', 'cancelled', 'trial'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE loom_type            AS ENUM ('pit_loom', 'frame_loom', 'jacquard', 'dobby', 'fly_shuttle', 'handloom_other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE textile_technique    AS ENUM ('banarasi_silk', 'kantha', 'ikat', 'block_print', 'embroidery', 'jamdani', 'chanderi', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE compliance_framework AS ENUM ('eu_ecgt', 'eu_csddd', 'eu_dpp', 'uk_green_claims', 'gots', 'fair_trade'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE document_type        AS ENUM ('compliance_report', 'artisan_certificate', 'batch_certificate', 'audit_trail', 'qr_summary'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id              UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email           TEXT NOT NULL,
   full_name       TEXT,
@@ -32,7 +33,7 @@ CREATE TABLE public.profiles (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.brands (
+CREATE TABLE IF NOT EXISTS public.brands (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   profile_id        UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   brand_name        TEXT NOT NULL,
@@ -56,7 +57,7 @@ CREATE TABLE public.brands (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.clusters (
+CREATE TABLE IF NOT EXISTS public.clusters (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name        TEXT NOT NULL,
   region      TEXT NOT NULL,
@@ -68,7 +69,7 @@ CREATE TABLE public.clusters (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.coordinators (
+CREATE TABLE IF NOT EXISTS public.coordinators (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   profile_id  UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   cluster_id  UUID REFERENCES public.clusters(id),
@@ -81,7 +82,7 @@ CREATE TABLE public.coordinators (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.artisans (
+CREATE TABLE IF NOT EXISTS public.artisans (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   artisan_id_code   TEXT UNIQUE NOT NULL,
   cluster_id        UUID REFERENCES public.clusters(id),
@@ -112,7 +113,7 @@ CREATE TABLE public.artisans (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.looms (
+CREATE TABLE IF NOT EXISTS public.looms (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   loom_id_code    TEXT UNIQUE NOT NULL,
   artisan_id      UUID REFERENCES public.artisans(id) ON DELETE CASCADE,
@@ -127,7 +128,7 @@ CREATE TABLE public.looms (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.batches (
+CREATE TABLE IF NOT EXISTS public.batches (
   id                UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   batch_id_code     TEXT UNIQUE NOT NULL,
   brand_id          UUID REFERENCES public.brands(id),
@@ -167,7 +168,7 @@ CREATE TABLE public.batches (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.skus (
+CREATE TABLE IF NOT EXISTS public.skus (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   sku_code        TEXT NOT NULL,
   brand_id        UUID REFERENCES public.brands(id) ON DELETE CASCADE,
@@ -182,7 +183,7 @@ CREATE TABLE public.skus (
   UNIQUE(sku_code, brand_id)
 );
 
-CREATE TABLE public.provenance_pages (
+CREATE TABLE IF NOT EXISTS public.provenance_pages (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   slug            TEXT UNIQUE NOT NULL,
   batch_id        UUID REFERENCES public.batches(id) ON DELETE CASCADE,
@@ -203,7 +204,7 @@ CREATE TABLE public.provenance_pages (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.compliance_documents (
+CREATE TABLE IF NOT EXISTS public.compliance_documents (
   id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   brand_id        UUID REFERENCES public.brands(id) ON DELETE CASCADE,
   batch_id        UUID REFERENCES public.batches(id),
@@ -217,7 +218,7 @@ CREATE TABLE public.compliance_documents (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.audit_logs (
+CREATE TABLE IF NOT EXISTS public.audit_logs (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   actor_id    UUID REFERENCES public.profiles(id),
   actor_role  user_role,
@@ -229,7 +230,7 @@ CREATE TABLE public.audit_logs (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.analytics_events (
+CREATE TABLE IF NOT EXISTS public.analytics_events (
   id          UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   brand_id    UUID REFERENCES public.brands(id),
   batch_id    UUID REFERENCES public.batches(id),
@@ -241,28 +242,38 @@ CREATE TABLE public.analytics_events (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_batches_brand_id         ON public.batches(brand_id);
-CREATE INDEX idx_batches_artisan_id       ON public.batches(artisan_id);
-CREATE INDEX idx_batches_status           ON public.batches(status);
-CREATE INDEX idx_batches_provenance_slug  ON public.batches(provenance_page_slug);
-CREATE INDEX idx_artisans_cluster         ON public.artisans(cluster_id);
-CREATE INDEX idx_skus_brand_id            ON public.skus(brand_id);
-CREATE INDEX idx_skus_batch_id            ON public.skus(batch_id);
-CREATE INDEX idx_provenance_slug          ON public.provenance_pages(slug);
-CREATE INDEX idx_analytics_brand_id       ON public.analytics_events(brand_id);
-CREATE INDEX idx_analytics_created_at     ON public.analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_batches_brand_id         ON public.batches(brand_id);
+CREATE INDEX IF NOT EXISTS idx_batches_artisan_id       ON public.batches(artisan_id);
+CREATE INDEX IF NOT EXISTS idx_batches_status           ON public.batches(status);
+CREATE INDEX IF NOT EXISTS idx_batches_provenance_slug  ON public.batches(provenance_page_slug);
+CREATE INDEX IF NOT EXISTS idx_artisans_cluster         ON public.artisans(cluster_id);
+CREATE INDEX IF NOT EXISTS idx_skus_brand_id            ON public.skus(brand_id);
+CREATE INDEX IF NOT EXISTS idx_skus_batch_id            ON public.skus(batch_id);
+CREATE INDEX IF NOT EXISTS idx_provenance_slug          ON public.provenance_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_analytics_brand_id       ON public.analytics_events(brand_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_created_at     ON public.analytics_events(created_at);
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN LANGUAGE SQL SECURITY DEFINER STABLE SET search_path = public AS $$
   SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin');
 $$;
 
+-- Creates the profile row on signup, honouring the role chosen at
+-- registration (validated against the enum), defaulting to 'brand'.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  meta_role TEXT := NEW.raw_user_meta_data->>'role';
+  resolved_role user_role;
 BEGIN
+  resolved_role := CASE
+    WHEN meta_role IN ('admin', 'brand', 'coordinator', 'consumer') THEN meta_role::user_role
+    ELSE 'brand'
+  END;
   INSERT INTO public.profiles (id, email, full_name, role)
   VALUES (NEW.id, NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'), 'brand')
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
+    resolved_role)
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
@@ -274,6 +285,11 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_profiles_updated_at   ON public.profiles;
+DROP TRIGGER IF EXISTS update_brands_updated_at     ON public.brands;
+DROP TRIGGER IF EXISTS update_artisans_updated_at   ON public.artisans;
+DROP TRIGGER IF EXISTS update_batches_updated_at    ON public.batches;
+DROP TRIGGER IF EXISTS update_provenance_updated_at ON public.provenance_pages;
 CREATE TRIGGER update_profiles_updated_at    BEFORE UPDATE ON public.profiles    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_brands_updated_at      BEFORE UPDATE ON public.brands      FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_artisans_updated_at    BEFORE UPDATE ON public.artisans    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -293,49 +309,81 @@ ALTER TABLE public.compliance_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_events     ENABLE ROW LEVEL SECURITY;
 
+-- Policies are dropped first so the script can be re-run safely.
+DROP POLICY IF EXISTS "profiles_rw" ON public.profiles;
 CREATE POLICY "profiles_rw" ON public.profiles FOR ALL USING (auth.uid() = id OR public.is_admin()) WITH CHECK (auth.uid() = id OR public.is_admin());
+DROP POLICY IF EXISTS "brands_rw" ON public.brands;
 CREATE POLICY "brands_rw" ON public.brands FOR ALL USING (profile_id = auth.uid() OR public.is_admin()) WITH CHECK (profile_id = auth.uid() OR public.is_admin());
+DROP POLICY IF EXISTS "clusters_read" ON public.clusters;
 CREATE POLICY "clusters_read"  ON public.clusters FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "clusters_admin" ON public.clusters;
 CREATE POLICY "clusters_admin" ON public.clusters FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "coordinators_self" ON public.coordinators;
 CREATE POLICY "coordinators_self"      ON public.coordinators FOR ALL USING (profile_id = auth.uid() OR public.is_admin()) WITH CHECK (profile_id = auth.uid() OR public.is_admin());
+DROP POLICY IF EXISTS "coordinators_read_auth" ON public.coordinators;
 CREATE POLICY "coordinators_read_auth" ON public.coordinators FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "artisans_admin" ON public.artisans;
 CREATE POLICY "artisans_admin"       ON public.artisans FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "artisans_coordinator" ON public.artisans;
 CREATE POLICY "artisans_coordinator" ON public.artisans FOR ALL
   USING (cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid()))
   WITH CHECK (cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "artisans_read_verified" ON public.artisans;
 CREATE POLICY "artisans_read_verified" ON public.artisans FOR SELECT USING (verification_status = 'verified' AND auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "looms_admin" ON public.looms;
 CREATE POLICY "looms_admin"     ON public.looms FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "looms_read_auth" ON public.looms;
 CREATE POLICY "looms_read_auth" ON public.looms FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "looms_coordinator" ON public.looms;
 CREATE POLICY "looms_coordinator" ON public.looms FOR ALL
   USING (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()))
   WITH CHECK (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()));
+DROP POLICY IF EXISTS "batches_brand_own" ON public.batches;
 CREATE POLICY "batches_brand_own" ON public.batches FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
   WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "batches_coordinator" ON public.batches;
 CREATE POLICY "batches_coordinator" ON public.batches FOR ALL
   USING (coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid()))
   WITH CHECK (coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "batches_admin" ON public.batches;
 CREATE POLICY "batches_admin" ON public.batches FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "skus_brand_own" ON public.skus;
 CREATE POLICY "skus_brand_own" ON public.skus FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
   WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "skus_admin" ON public.skus;
 CREATE POLICY "skus_admin" ON public.skus FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "provenance_public_read" ON public.provenance_pages;
 CREATE POLICY "provenance_public_read"   ON public.provenance_pages FOR SELECT USING (published = TRUE);
+DROP POLICY IF EXISTS "provenance_brand_manage" ON public.provenance_pages;
 CREATE POLICY "provenance_brand_manage"  ON public.provenance_pages FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
   WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "provenance_admin" ON public.provenance_pages;
 CREATE POLICY "provenance_admin"         ON public.provenance_pages FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "compliance_brand_own" ON public.compliance_documents;
 CREATE POLICY "compliance_brand_own" ON public.compliance_documents FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
   WITH CHECK (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()));
+DROP POLICY IF EXISTS "compliance_admin" ON public.compliance_documents;
 CREATE POLICY "compliance_admin" ON public.compliance_documents FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DROP POLICY IF EXISTS "audit_admin_read" ON public.audit_logs;
 CREATE POLICY "audit_admin_read"  ON public.audit_logs FOR SELECT USING (public.is_admin());
+DROP POLICY IF EXISTS "audit_insert_auth" ON public.audit_logs;
 CREATE POLICY "audit_insert_auth" ON public.audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "analytics_brand_read" ON public.analytics_events;
 CREATE POLICY "analytics_brand_read" ON public.analytics_events FOR SELECT
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()) OR public.is_admin());
+DROP POLICY IF EXISTS "analytics_public_insert" ON public.analytics_events;
 CREATE POLICY "analytics_public_insert" ON public.analytics_events FOR INSERT WITH CHECK (TRUE);
 
-INSERT INTO public.clusters (name, region, country, lat, lng, description) VALUES
-  ('Varanasi Cluster',     'Varanasi, Uttar Pradesh', 'India', 25.3176, 82.9739, 'Primary Banarasi silk weaving cluster'),
-  ('Murshidabad Cluster',  'Murshidabad, West Bengal', 'India', 24.1800, 88.2667, 'Renowned for Jamdani and fine Murshidabad silk'),
-  ('Chanderi Cluster',     'Chanderi, Madhya Pradesh', 'India', 24.7132, 78.1419, 'Home of lightweight Chanderi silk-cotton');
+-- Seed reference data (only when the table is empty, so re-running is safe).
+INSERT INTO public.clusters (name, region, country, lat, lng, description)
+SELECT v.name, v.region, v.country, v.lat, v.lng, v.description
+FROM (VALUES
+  ('Varanasi Cluster',     'Varanasi, Uttar Pradesh',  'India', 25.3176::numeric, 82.9739::numeric, 'Primary Banarasi silk weaving cluster'),
+  ('Murshidabad Cluster',  'Murshidabad, West Bengal', 'India', 24.1800::numeric, 88.2667::numeric, 'Renowned for Jamdani and fine Murshidabad silk'),
+  ('Chanderi Cluster',     'Chanderi, Madhya Pradesh', 'India', 24.7132::numeric, 78.1419::numeric, 'Home of lightweight Chanderi silk-cotton')
+) AS v(name, region, country, lat, lng, description)
+WHERE NOT EXISTS (SELECT 1 FROM public.clusters);

@@ -16,7 +16,7 @@ const fieldActions = [
 ];
 
 export default function QuickActions({ role }: { role?: string }) {
-  const actions = role === 'field_coordinator' ? fieldActions : brandActions;
+  const actions = role === 'coordinator' ? fieldActions : brandActions;
   return (
     <div className="card">
       <h3 className="font-serif text-lg text-indigo-900 mb-4">Quick Actions</h3>

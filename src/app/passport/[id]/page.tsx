@@ -6,7 +6,28 @@ interface Props {
   params: { id: string }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const techniqueLabels: Record<string, string> = {
+  banarasi_silk: 'Banarasi Silk',
+  kantha: 'Kantha',
+  ikat: 'Ikat',
+  block_print: 'Block Print',
+  embroidery: 'Hand Embroidery',
+  jamdani: 'Jamdani',
+  chanderi: 'Chanderi',
+  other: 'Traditional Craft',
+}
+const loomTypeLabels: Record<string, string> = {
+  pit_loom: 'Pit Loom',
+  frame_loom: 'Frame Loom',
+  jacquard: 'Jacquard',
+  dobby: 'Dobby',
+  fly_shuttle: 'Fly Shuttle',
+  handloom_other: 'Handloom',
+}
+
+export async function generateMetadata(_props: Props): Promise<Metadata> {
   return {
     title: 'Weft Passport — Verified Textile Provenance',
     description: 'Scan to verify the origin and artisan story behind this handwoven textile.',
@@ -16,22 +37,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PassportPage({ params }: Props) {
   const supabase = createClient()
 
-  // Try to find batch by ID or batch_code
-  const { data: batch } = await supabase
+  // Look up the certified batch by UUID id, batch_id_code, or provenance slug.
+  let query = supabase
     .from('batches')
     .select(`
       *,
       artisans (
-        artisan_code, full_name, village, district, state,
-        photo_url, specialisations, years_experience,
-        cooperative_name, cooperative_verified,
+        artisan_id_code, full_name, village, district, state,
+        photo_url, specialisation, years_experience,
+        cooperative_name, cooperative_member,
         clusters ( name, region, country )
       ),
-      looms ( loom_code, loom_type, weave_type, width_cm, age_years )
+      looms ( loom_id_code, loom_type, width_cm, age_years )
     `)
-    .or(`id.eq.${params.id},batch_code.eq.${params.id}`)
     .eq('status', 'certified')
-    .single()
+
+  query = UUID_RE.test(params.id)
+    ? query.eq('id', params.id)
+    : query.or(`batch_id_code.eq.${params.id},provenance_page_slug.eq.${params.id}`)
+
+  const { data: batch } = await query.limit(1).maybeSingle()
 
   if (!batch) notFound()
 
@@ -43,14 +68,7 @@ export default async function PassportPage({ params }: Props) {
     ? new Date(batch.certified_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
 
-  const weaveLabels: Record<string, string> = {
-    handloom: 'Handloom',
-    powerloom: 'Power Loom',
-    semi_handloom: 'Semi Handloom',
-    embroidery: 'Hand Embroidery',
-    block_print: 'Block Print',
-    other: 'Traditional Craft',
-  }
+  const techniqueLabel = techniqueLabels[batch.technique] || batch.technique
 
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
@@ -75,13 +93,11 @@ export default async function PassportPage({ params }: Props) {
           <div className="bg-gradient-to-r from-[#1B1464] to-[#2D2196] px-6 py-5">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-white text-xl font-bold font-serif">{batch.textile_type}</h1>
-                {batch.pattern_name && (
-                  <p className="text-white/70 text-sm mt-0.5">{batch.pattern_name}</p>
-                )}
+                <h1 className="text-white text-xl font-bold font-serif">{batch.textile_name}</h1>
+                <p className="text-white/70 text-sm mt-0.5">{techniqueLabel}</p>
               </div>
               <div className="text-right">
-                <p className="text-[#F4A300] text-xs font-mono font-bold">{batch.batch_code}</p>
+                <p className="text-[#F4A300] text-xs font-mono font-bold">{batch.batch_id_code}</p>
                 {certDate && <p className="text-white/60 text-xs mt-0.5">Certified {certDate}</p>}
               </div>
             </div>
@@ -92,14 +108,14 @@ export default async function PassportPage({ params }: Props) {
                 ✓ Artisan Verified
               </span>
               <span className="bg-[#F4A300]/20 border border-[#F4A300]/40 text-[#F4A300] text-xs px-3 py-1 rounded-full font-semibold">
-                ✓ {weaveLabels[batch.weave_type] || batch.weave_type}
+                ✓ {techniqueLabel}
               </span>
               <span className="bg-white/10 border border-white/20 text-white/80 text-xs px-3 py-1 rounded-full">
                 ✓ Loom Recorded
               </span>
-              {artisan?.cooperative_verified && (
+              {artisan?.cooperative_member && (
                 <span className="bg-blue-500/20 border border-blue-400/40 text-blue-300 text-xs px-3 py-1 rounded-full">
-                  ✓ Co-op Verified
+                  ✓ Co-op Member
                 </span>
               )}
             </div>
@@ -108,10 +124,10 @@ export default async function PassportPage({ params }: Props) {
           {/* Textile details */}
           <div className="px-6 py-5 grid grid-cols-2 gap-4 border-b border-[#E5E0D8]">
             {[
-              { label: 'Textile Type', value: batch.textile_type },
-              { label: 'Weave Method', value: weaveLabels[batch.weave_type] },
+              { label: 'Textile', value: batch.textile_name },
+              { label: 'Technique', value: techniqueLabel },
               { label: 'Fibre Content', value: batch.fibre_content },
-              { label: 'Colour', value: batch.colour },
+              { label: 'Colour', value: batch.colour_palette },
             ].filter(i => i.value).map(item => (
               <div key={item.label}>
                 <p className="text-[#6B7280] text-xs uppercase tracking-wide font-medium">{item.label}</p>
@@ -131,6 +147,7 @@ export default async function PassportPage({ params }: Props) {
             <div className="px-6 py-5">
               <div className="flex items-start gap-4">
                 {artisan.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={artisan.photo_url} alt={artisan.full_name}
                     className="w-16 h-16 rounded-xl object-cover border-2 border-[#F4A300]/30" />
                 ) : (
@@ -143,15 +160,15 @@ export default async function PassportPage({ params }: Props) {
                   <p className="text-[#6B7280] text-sm">
                     {[artisan.village, artisan.district, artisan.state].filter(Boolean).join(', ')}
                   </p>
-                  <p className="text-[#1B1464] text-xs font-mono mt-1">{artisan.artisan_code}</p>
+                  <p className="text-[#1B1464] text-xs font-mono mt-1">{artisan.artisan_id_code}</p>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                {artisan.specialisations?.length > 0 && (
+                {artisan.specialisation?.length > 0 && (
                   <div>
                     <p className="text-[#6B7280] text-xs uppercase tracking-wide font-medium">Craft Specialisation</p>
-                    <p className="text-[#1A1A2E] text-sm font-semibold mt-0.5">{artisan.specialisations.join(', ')}</p>
+                    <p className="text-[#1A1A2E] text-sm font-semibold mt-0.5">{artisan.specialisation.join(', ')}</p>
                   </div>
                 )}
                 {artisan.years_experience && (
@@ -165,8 +182,8 @@ export default async function PassportPage({ params }: Props) {
                     <p className="text-[#6B7280] text-xs uppercase tracking-wide font-medium">Cooperative</p>
                     <p className="text-[#1A1A2E] text-sm font-semibold mt-0.5">
                       {artisan.cooperative_name}
-                      {artisan.cooperative_verified && (
-                        <span className="ml-2 text-green-600 text-xs">✓ Verified</span>
+                      {artisan.cooperative_member && (
+                        <span className="ml-2 text-green-600 text-xs">✓ Member</span>
                       )}
                     </p>
                   </div>
@@ -191,19 +208,19 @@ export default async function PassportPage({ params }: Props) {
                   <p className="text-[#6B7280] text-sm">{cluster.region}, {cluster.country}</p>
                 </div>
               </div>
-              {batch.production_started_at && (
+              {batch.production_start && (
                 <div className="mt-4 flex gap-6">
                   <div>
                     <p className="text-[#6B7280] text-xs uppercase tracking-wide font-medium">Production Started</p>
                     <p className="text-[#1A1A2E] text-sm font-semibold mt-0.5">
-                      {new Date(batch.production_started_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                      {new Date(batch.production_start).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
-                  {batch.production_completed_at && (
+                  {batch.production_end && (
                     <div>
                       <p className="text-[#6B7280] text-xs uppercase tracking-wide font-medium">Completed</p>
                       <p className="text-[#1A1A2E] text-sm font-semibold mt-0.5">
-                        {new Date(batch.production_completed_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                        {new Date(batch.production_end).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                       </p>
                     </div>
                   )}
@@ -222,9 +239,8 @@ export default async function PassportPage({ params }: Props) {
             </div>
             <div className="px-6 py-5 grid grid-cols-2 gap-3">
               {[
-                { label: 'Loom Code', value: loom.loom_code },
-                { label: 'Loom Type', value: loom.loom_type },
-                { label: 'Weave Method', value: weaveLabels[loom.weave_type] },
+                { label: 'Loom Code', value: loom.loom_id_code },
+                { label: 'Loom Type', value: loomTypeLabels[loom.loom_type] || loom.loom_type },
                 { label: 'Width', value: loom.width_cm ? `${loom.width_cm} cm` : null },
                 { label: 'Age', value: loom.age_years ? `${loom.age_years} years` : null },
               ].filter(i => i.value).map(item => (

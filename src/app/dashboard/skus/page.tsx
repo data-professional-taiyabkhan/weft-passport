@@ -51,8 +51,12 @@ export default async function SKUsPage() {
               <tbody className="divide-y divide-[#F3EFE8]">
                 {skus.map(s => (
                   <tr key={s.id} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{s.sku_code}</td>
-                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">{s.product_name}</td>
+                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">
+                      <Link href={`/dashboard/skus/${s.id}`} className="hover:underline">{s.sku_code}</Link>
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">
+                      <Link href={`/dashboard/skus/${s.id}`} className="hover:underline">{s.product_name}</Link>
+                    </td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">{s.product_category || '—'}</td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${s.active ? statusColour.active : statusColour.inactive}`}>

@@ -53,8 +53,12 @@ export default async function ArtisansPage() {
               <tbody className="divide-y divide-[#F3EFE8]">
                 {artisans.map(a => (
                   <tr key={a.id} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{a.artisan_id_code}</td>
-                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">{a.full_name}</td>
+                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">
+                      <Link href={`/dashboard/artisans/${a.id}`} className="hover:underline">{a.artisan_id_code}</Link>
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">
+                      <Link href={`/dashboard/artisans/${a.id}`} className="hover:underline">{a.full_name}</Link>
+                    </td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">
                       {[a.village, a.district, a.state].filter(Boolean).join(', ') || '—'}
                     </td>

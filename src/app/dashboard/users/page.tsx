@@ -4,7 +4,7 @@ export default async function UsersPage() {
   const supabase = createClient();
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, brands(brand_name), coordinators(clusters(name))')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -32,7 +32,7 @@ export default async function UsersPage() {
                   <td className="px-4 py-3">
                     <span className="badge bg-indigo-100 text-indigo-700 capitalize">{p.role}</span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{p.organisation ?? '—'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{p.brands?.[0]?.brand_name ?? p.coordinators?.[0]?.clusters?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {new Date(p.created_at).toLocaleDateString('en-GB')}
                   </td>

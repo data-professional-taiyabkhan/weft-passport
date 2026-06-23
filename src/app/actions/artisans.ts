@@ -47,11 +47,14 @@ export async function verifyArtisan(artisanId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  await supabase
+  const { error } = await supabase
     .from('artisans')
     .update({ verification_status: 'verified', verified_at: new Date().toISOString() })
     .eq('id', artisanId)
 
+  if (error) return { error: error.message }
+
   revalidatePath('/dashboard/artisans')
+  revalidatePath(`/dashboard/artisans/${artisanId}`)
   return { success: true }
 }

@@ -16,8 +16,9 @@ export default function ComplianceExportPage() {
 
   const handleGenerate = async () => {
     setGenerating(true);
-    // Placeholder — will call API route once PDF generation is wired up
-    await new Promise(r => setTimeout(r, 1500));
+    // Opens a print-ready compliance report (save as PDF) backed by the
+    // brand's certified batch provenance records.
+    window.open(`/api/compliance/export?framework=${encodeURIComponent(selected)}`, '_blank');
     setGenerating(false);
     setDone(true);
   };

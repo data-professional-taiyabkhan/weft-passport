@@ -28,6 +28,7 @@ const adminNav = [
   { href: '/dashboard/artisans', icon: '◎', label: 'Artisans' },
   { href: '/dashboard/batches', icon: '⧉', label: 'All Batches' },
   { href: '/dashboard/clusters', icon: '⬡', label: 'Clusters' },
+  { href: '/dashboard/coordinators', icon: '◍', label: 'Coordinators' },
   { href: '/dashboard/compliance', icon: '✦', label: 'Compliance' },
   { href: '/dashboard/users', icon: '◌', label: 'Users' },
   { href: '/dashboard/settings', icon: '◌', label: 'Settings' },

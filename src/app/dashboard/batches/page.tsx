@@ -2,13 +2,26 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { getBatchStatusColor } from '@/lib/utils';
 
-export default async function BatchesPage() {
+const FILTERS: { label: string; value: string }[] = [
+  { label: 'All', value: '' },
+  { label: 'Draft', value: 'draft' },
+  { label: 'Submitted', value: 'submitted' },
+  { label: 'Field Verified', value: 'field_verified' },
+  { label: 'Certified', value: 'certified' },
+  { label: 'Rejected', value: 'rejected' },
+];
+
+export default async function BatchesPage({ searchParams }: { searchParams: { status?: string } }) {
   const supabase = createClient();
-  const { data: batches } = await supabase
+  const active = searchParams.status ?? '';
+
+  let query = supabase
     .from('batches')
     .select('*, artisans(full_name, artisan_id_code), clusters(name)')
     .order('created_at', { ascending: false })
     .limit(50);
+  if (active) query = query.eq('status', active);
+  const { data: batches } = await query;
 
   return (
     <div className="animate-fade-in">
@@ -23,10 +36,12 @@ export default async function BatchesPage() {
       {/* Filters */}
       <div className="card mb-6">
         <div className="flex flex-wrap gap-3">
-          {['All', 'Draft', 'Submitted', 'Verified', 'Certified', 'Rejected'].map(f => (
-            <button key={f} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-              f==='All' ? 'bg-indigo-900 text-white' : 'bg-cream-200 text-gray-600 hover:bg-indigo-50'
-            }`}>{f}</button>
+          {FILTERS.map(f => (
+            <Link key={f.label}
+              href={f.value ? `/dashboard/batches?status=${f.value}` : '/dashboard/batches'}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                active === f.value ? 'bg-indigo-900 text-white' : 'bg-cream-200 text-gray-600 hover:bg-indigo-50'
+              }`}>{f.label}</Link>
           ))}
         </div>
       </div>

@@ -18,7 +18,7 @@ export async function createArtisan(formData: FormData) {
   const specArray = specialisations ? specialisations.split(',').map(s => s.trim()).filter(Boolean) : []
 
   const { error } = await supabase.from('artisans').insert({
-    artisan_code,
+    artisan_id_code: artisan_code,
     cluster_id: cluster_id || null,
     full_name: formData.get('full_name') as string,
     gender: formData.get('gender') as string || null,
@@ -26,11 +26,12 @@ export async function createArtisan(formData: FormData) {
     district: formData.get('district') as string || null,
     state: formData.get('state') as string || null,
     phone: formData.get('phone') as string || null,
-    specialisations: specArray,
+    specialisation: specArray,
     years_experience: formData.get('years_experience') ? Number(formData.get('years_experience')) : null,
     cooperative_name: formData.get('cooperative_name') as string || null,
-    notes: formData.get('notes') as string || null,
-    status: 'pending',
+    cooperative_member: Boolean(formData.get('cooperative_name')),
+    bio: formData.get('notes') as string || null,
+    verification_status: 'pending',
   })
 
   if (error) {
@@ -48,7 +49,7 @@ export async function verifyArtisan(artisanId: string) {
 
   await supabase
     .from('artisans')
-    .update({ status: 'verified', verified_by: user.id, verified_at: new Date().toISOString() })
+    .update({ verification_status: 'verified', verified_at: new Date().toISOString() })
     .eq('id', artisanId)
 
   revalidatePath('/dashboard/artisans')

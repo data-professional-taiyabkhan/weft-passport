@@ -5,14 +5,13 @@ export default async function SKUsPage() {
   const supabase = createClient()
   const { data: skus } = await supabase
     .from('skus')
-    .select('id, sku_code, product_name, textile_type, status, created_at')
+    .select('id, sku_code, product_name, product_category, active, created_at')
     .order('created_at', { ascending: false })
     .limit(50)
 
   const statusColour: Record<string, string> = {
     active: 'bg-green-100 text-green-700',
-    draft: 'bg-yellow-100 text-yellow-700',
-    archived: 'bg-gray-100 text-gray-500',
+    inactive: 'bg-gray-100 text-gray-500',
   }
 
   return (
@@ -44,7 +43,7 @@ export default async function SKUsPage() {
             <table className="w-full">
               <thead className="bg-[#FAF7F2] border-b border-[#E5E0D8]">
                 <tr>
-                  {['SKU Code', 'Product Name', 'Textile Type', 'Status', 'Created', 'QR'].map(h => (
+                  {['SKU Code', 'Product Name', 'Category', 'Status', 'Created', 'QR'].map(h => (
                     <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -54,10 +53,10 @@ export default async function SKUsPage() {
                   <tr key={s.id} className="hover:bg-[#FAF7F2] transition-colors">
                     <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{s.sku_code}</td>
                     <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">{s.product_name}</td>
-                    <td className="px-5 py-4 text-[#6B7280] text-sm">{s.textile_type || '—'}</td>
+                    <td className="px-5 py-4 text-[#6B7280] text-sm">{s.product_category || '—'}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColour[s.status] || 'bg-gray-100 text-gray-500'}`}>
-                        {s.status}
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${s.active ? statusColour.active : statusColour.inactive}`}>
+                        {s.active ? 'active' : 'inactive'}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">

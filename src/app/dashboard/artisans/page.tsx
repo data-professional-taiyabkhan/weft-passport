@@ -5,14 +5,15 @@ export default async function ArtisansPage() {
   const supabase = createClient()
   const { data: artisans } = await supabase
     .from('artisans')
-    .select('id, artisan_code, full_name, village, district, state, specialisations, status, years_experience')
+    .select('id, artisan_id_code, full_name, village, district, state, specialisation, verification_status, years_experience')
     .order('created_at', { ascending: false })
     .limit(50)
 
   const statusColour: Record<string, string> = {
     verified: 'bg-green-100 text-green-700',
     pending: 'bg-yellow-100 text-yellow-700',
-    inactive: 'bg-gray-100 text-gray-500',
+    under_review: 'bg-purple-100 text-purple-700',
+    rejected: 'bg-red-100 text-red-700',
   }
 
   return (
@@ -52,20 +53,20 @@ export default async function ArtisansPage() {
               <tbody className="divide-y divide-[#F3EFE8]">
                 {artisans.map(a => (
                   <tr key={a.id} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{a.artisan_code}</td>
+                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{a.artisan_id_code}</td>
                     <td className="px-5 py-4 font-semibold text-[#1A1A2E] text-sm">{a.full_name}</td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">
                       {[a.village, a.district, a.state].filter(Boolean).join(', ') || '—'}
                     </td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">
-                      {a.specialisations?.slice(0, 2).join(', ') || '—'}
+                      {a.specialisation?.slice(0, 2).join(', ') || '—'}
                     </td>
                     <td className="px-5 py-4 text-[#6B7280] text-sm">
                       {a.years_experience ? `${a.years_experience} yrs` : '—'}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColour[a.status] || 'bg-gray-100 text-gray-500'}`}>
-                        {a.status}
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColour[a.verification_status] || 'bg-gray-100 text-gray-500'}`}>
+                        {a.verification_status?.replace('_', ' ')}
                       </span>
                     </td>
                   </tr>

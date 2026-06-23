@@ -5,7 +5,7 @@ export default async function CompliancePage() {
   const supabase = createClient()
   const { data: batches } = await supabase
     .from('batches')
-    .select('id, batch_code, textile_type, status, certified_at')
+    .select('id, batch_id_code, textile_name, status, certified_at')
     .in('status', ['certified', 'submitted'])
     .order('certified_at', { ascending: false })
     .limit(20)
@@ -68,8 +68,8 @@ export default async function CompliancePage() {
               <tbody className="divide-y divide-[#F3EFE8]">
                 {batches.map(b => (
                   <tr key={b.id} className="hover:bg-[#FAF7F2]">
-                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{b.batch_code}</td>
-                    <td className="px-5 py-4 text-sm text-[#1A1A2E]">{b.textile_type}</td>
+                    <td className="px-5 py-4 text-xs font-mono text-[#1B1464] font-semibold">{b.batch_id_code}</td>
+                    <td className="px-5 py-4 text-sm text-[#1A1A2E]">{b.textile_name}</td>
                     <td className="px-5 py-4">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                         b.status === 'certified' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'

@@ -19,22 +19,21 @@ export async function createBatch(formData: FormData) {
 
   const year = new Date().getFullYear()
   const num = Math.floor(Math.random() * 9000) + 1000
-  const batch_code = `WP-BTH-${year}-${num}`
+  const batch_id_code = `WP-BTH-${year}-${num}`
 
   const { error } = await supabase.from('batches').insert({
-    batch_code,
+    batch_id_code,
     brand_id: brand?.id,
     artisan_id: formData.get('artisan_id') as string || null,
     loom_id: formData.get('loom_id') as string || null,
-    textile_type: formData.get('textile_type') as string,
-    weave_type: formData.get('weave_type') as string,
+    textile_name: formData.get('textile_name') as string,
+    technique: formData.get('technique') as string,
     fibre_content: formData.get('fibre_content') as string || null,
-    colour: formData.get('colour') as string || null,
-    pattern_name: formData.get('pattern_name') as string || null,
-    production_started_at: formData.get('production_started_at') as string || null,
+    colour_palette: formData.get('colour_palette') as string || null,
+    production_start: formData.get('production_start') as string || null,
+    production_location: formData.get('production_location') as string || null,
     field_notes: formData.get('field_notes') as string || null,
     status: 'draft',
-    created_by: user.id,
   })
 
   if (error) {
@@ -75,17 +74,13 @@ export async function certifyBatch(batchId: string) {
     return { error: 'Unauthorized' }
   }
 
-  const year = new Date().getFullYear()
-  const num = Math.floor(Math.random() * 9000) + 1000
-  const batch_code_suffix = `${year}-${num}`
-
   await supabase
     .from('batches')
     .update({
       status: 'certified',
       certified_at: new Date().toISOString(),
       certified_by: user.id,
-      passport_url: `/passport/${batchId}`,
+      qr_code_url: `/passport/${batchId}`,
     })
     .eq('id', batchId)
 

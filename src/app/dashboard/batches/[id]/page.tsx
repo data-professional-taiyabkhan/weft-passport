@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle, Clock, QrCode, FileText, MapPin } from 'lucide-
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-700 border-gray-200',
   submitted: 'bg-blue-50 text-blue-700 border-blue-200',
-  verified: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  field_verified: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   certified: 'bg-green-50 text-green-700 border-green-200',
   rejected: 'bg-red-50 text-red-700 border-red-200',
 };
@@ -32,10 +32,10 @@ export default async function BatchDetailPage({ params }: { params: { id: string
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-serif text-indigo-900">{batch.batch_code}</h1>
-            <span className={`badge border text-sm px-3 py-1 ${STATUS_COLORS[batch.status]}`}>{batch.status}</span>
+            <h1 className="text-2xl font-serif text-indigo-900">{batch.batch_id_code}</h1>
+            <span className={`badge border text-sm px-3 py-1 ${STATUS_COLORS[batch.status]}`}>{batch.status?.replace('_',' ')}</span>
           </div>
-          <p className="text-gray-500 text-sm mt-1">{batch.textile_type} · {batch.weave_type?.replace('_',' ')} · {batch.clusters?.name ?? 'Unknown cluster'}</p>
+          <p className="text-gray-500 text-sm mt-1">{batch.textile_name} · {batch.technique?.replace('_',' ')} · {batch.clusters?.name ?? 'Unknown cluster'}</p>
         </div>
         <div className="flex gap-2">
           {batch.status === 'certified' && (
@@ -55,9 +55,9 @@ export default async function BatchDetailPage({ params }: { params: { id: string
           <div className="card">
             <h3 className="font-serif text-indigo-900 mb-4">Textile Information</h3>
             <dl className="grid grid-cols-2 gap-4 text-sm">
-              {[['Textile Type', batch.textile_type], ['Weave Type', batch.weave_type?.replace('_',' ')],
-                ['Fibre Content', batch.fibre_content || '—'], ['Colour', batch.colour || '—'],
-                ['Pattern', batch.pattern_name || '—'], ['Location', batch.production_location || '—']
+              {[['Textile', batch.textile_name], ['Technique', batch.technique?.replace('_',' ')],
+                ['Fibre Content', batch.fibre_content || '—'], ['Colour', batch.colour_palette || '—'],
+                ['Quantity', batch.quantity_pieces ? `${batch.quantity_pieces} pcs` : '—'], ['Location', batch.production_location || '—']
               ].map(([k,v]) => (
                 <div key={k as string}>
                   <dt className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{k}</dt>
@@ -110,11 +110,11 @@ export default async function BatchDetailPage({ params }: { params: { id: string
                 </div>
                 <div>
                   <div className="font-semibold text-weft-text">{batch.artisans.full_name}</div>
-                  <div className="text-xs font-mono text-gray-500">{batch.artisans.artisan_code}</div>
+                  <div className="text-xs font-mono text-gray-500">{batch.artisans.artisan_id_code}</div>
                 </div>
               </div>
               <dl className="space-y-2 text-sm">
-                {[['Status', batch.artisans.status], ['Village', batch.artisans.village || '—'],
+                {[['Status', batch.artisans.verification_status?.replace('_',' ')], ['Village', batch.artisans.village || '—'],
                   ['Cooperative', batch.artisans.cooperative_name || '—']
                 ].map(([k,v]) => (
                   <div key={k} className="flex justify-between">
@@ -134,7 +134,7 @@ export default async function BatchDetailPage({ params }: { params: { id: string
             <h3 className="font-serif text-indigo-900 mb-4">Certification</h3>
             <div className="space-y-3">
               {['Field captured','Artisan verified','Batch submitted','Certified'].map((step, i) => {
-                const statusOrder = ['draft','submitted','verified','certified'];
+                const statusOrder = ['draft','submitted','field_verified','certified'];
                 const currentIdx = statusOrder.indexOf(batch.status);
                 const done = i <= currentIdx;
                 return (

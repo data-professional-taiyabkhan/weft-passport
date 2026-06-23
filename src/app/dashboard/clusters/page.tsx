@@ -20,7 +20,7 @@ export default async function ClustersPage() {
           <div key={c.id} className="card hover:shadow-weft-lg transition-all">
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-weft-text">{c.name}</h3>
-              {c.is_verified && <span className="badge badge-certified">Verified</span>}
+              {c.active && <span className="badge badge-certified">Active</span>}
             </div>
             <p className="text-sm text-gray-500">{c.region}, {c.country}</p>
             {c.description && <p className="text-xs text-gray-400 mt-2">{c.description}</p>}

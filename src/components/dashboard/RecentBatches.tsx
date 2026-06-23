@@ -14,7 +14,7 @@ export default async function RecentBatches() {
   const supabase = createClient();
   const { data: batches } = await supabase
     .from('batches')
-    .select('id, batch_code, textile_type, weave_type, status, created_at, artisans(full_name)')
+    .select('id, batch_id_code, textile_name, technique, status, created_at, artisans(full_name)')
     .order('created_at', { ascending: false })
     .limit(6);
 
@@ -49,9 +49,9 @@ export default async function RecentBatches() {
               {batches.map((b: any) => (
                 <tr key={b.id} className="hover:bg-cream-50 transition-colors">
                   <td className="py-3 pr-4">
-                    <Link href={`/dashboard/batches/${b.id}`} className="font-mono text-indigo-700 hover:underline text-xs">{b.batch_code}</Link>
+                    <Link href={`/dashboard/batches/${b.id}`} className="font-mono text-indigo-700 hover:underline text-xs">{b.batch_id_code}</Link>
                   </td>
-                  <td className="py-3 pr-4 text-gray-700">{b.textile_type}</td>
+                  <td className="py-3 pr-4 text-gray-700">{b.textile_name}</td>
                   <td className="py-3 pr-4 text-gray-600">{b.artisans?.full_name ?? '—'}</td>
                   <td className="py-3">
                     <span className={STATUS_STYLES[b.status] ?? 'badge-draft'}>{b.status}</span>

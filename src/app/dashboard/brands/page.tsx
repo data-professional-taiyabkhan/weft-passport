@@ -42,10 +42,10 @@ export default async function AdminBrandsPage() {
                 <tr key={b.id} className="hover:bg-cream-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-700 font-bold text-sm">{b.name[0]}</div>
+                      <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-700 font-bold text-sm">{b.brand_name?.[0]}</div>
                       <div>
-                        <p className="text-sm font-semibold text-weft-text">{b.name}</p>
-                        <p className="text-xs text-gray-400">{b.website ?? b.slug}</p>
+                        <p className="text-sm font-semibold text-weft-text">{b.brand_name}</p>
+                        <p className="text-xs text-gray-400">{b.website ?? b.brand_slug}</p>
                       </div>
                     </div>
                   </td>
@@ -53,9 +53,9 @@ export default async function AdminBrandsPage() {
                     <p className="text-sm">{b.profiles?.full_name}</p>
                     <p className="text-xs text-gray-400">{b.profiles?.email}</p>
                   </td>
-                  <td className="px-4 py-3"><span className={`badge ${planBadge[b.subscription_plan] ?? 'bg-gray-100 text-gray-600'}`}>{b.subscription_plan}</span></td>
+                  <td className="px-4 py-3"><span className={`badge ${planBadge[b.subscription_tier] ?? 'bg-gray-100 text-gray-600'}`}>{b.subscription_tier}</span></td>
                   <td className="px-4 py-3"><span className={`badge ${b.subscription_status==='active' ? 'badge-certified' : 'badge-pending'}`}>{b.subscription_status}</span></td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{b.onboarded_at ? new Date(b.onboarded_at).toLocaleDateString('en-GB') : '—'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB') : '—'}</td>
                   <td className="px-4 py-3">
                     <Link href={`/dashboard/brands/${b.id}`} className="text-xs text-indigo-600 hover:underline">Manage</Link>
                   </td>

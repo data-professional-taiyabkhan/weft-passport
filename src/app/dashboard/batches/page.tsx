@@ -6,7 +6,7 @@ export default async function BatchesPage() {
   const supabase = createClient();
   const { data: batches } = await supabase
     .from('batches')
-    .select('*, artisans(full_name, artisan_code), clusters(name)')
+    .select('*, artisans(full_name, artisan_id_code), clusters(name)')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -46,12 +46,12 @@ export default async function BatchesPage() {
               {batches && batches.length > 0 ? batches.map((b: any) => (
                 <tr key={b.id} className="hover:bg-cream-50 transition-colors">
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">{b.batch_code}</span>
+                    <span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">{b.batch_id_code}</span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-weft-text">{b.textile_type}</td>
+                  <td className="px-4 py-3 text-sm text-weft-text">{b.textile_name}</td>
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-weft-text">{b.artisans?.full_name ?? '—'}</div>
-                    <div className="text-xs text-gray-400">{b.artisans?.artisan_code}</div>
+                    <div className="text-xs text-gray-400">{b.artisans?.artisan_id_code}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">{b.clusters?.name ?? '—'}</td>
                   <td className="px-4 py-3">

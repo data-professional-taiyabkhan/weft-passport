@@ -330,6 +330,10 @@ CREATE POLICY "artisans_coordinator" ON public.artisans FOR ALL
   WITH CHECK (cluster_id IN (SELECT cluster_id FROM public.coordinators WHERE profile_id = auth.uid()));
 DROP POLICY IF EXISTS "artisans_read_verified" ON public.artisans;
 CREATE POLICY "artisans_read_verified" ON public.artisans FOR SELECT USING (verification_status = 'verified' AND auth.uid() IS NOT NULL);
+-- Public passport: anyone may read an artisan referenced by a certified batch.
+DROP POLICY IF EXISTS "artisans_public_certified" ON public.artisans;
+CREATE POLICY "artisans_public_certified" ON public.artisans FOR SELECT
+  USING (id IN (SELECT artisan_id FROM public.batches WHERE status = 'certified'));
 DROP POLICY IF EXISTS "looms_admin" ON public.looms;
 CREATE POLICY "looms_admin"     ON public.looms FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 DROP POLICY IF EXISTS "looms_read_auth" ON public.looms;
@@ -338,6 +342,10 @@ DROP POLICY IF EXISTS "looms_coordinator" ON public.looms;
 CREATE POLICY "looms_coordinator" ON public.looms FOR ALL
   USING (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()))
   WITH CHECK (artisan_id IN (SELECT a.id FROM public.artisans a JOIN public.coordinators c ON a.cluster_id = c.cluster_id WHERE c.profile_id = auth.uid()));
+-- Public passport: anyone may read a loom referenced by a certified batch.
+DROP POLICY IF EXISTS "looms_public_certified" ON public.looms;
+CREATE POLICY "looms_public_certified" ON public.looms FOR SELECT
+  USING (id IN (SELECT loom_id FROM public.batches WHERE status = 'certified'));
 DROP POLICY IF EXISTS "batches_brand_own" ON public.batches;
 CREATE POLICY "batches_brand_own" ON public.batches FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))
@@ -348,6 +356,9 @@ CREATE POLICY "batches_coordinator" ON public.batches FOR ALL
   WITH CHECK (coordinator_id IN (SELECT id FROM public.coordinators WHERE profile_id = auth.uid()));
 DROP POLICY IF EXISTS "batches_admin" ON public.batches;
 CREATE POLICY "batches_admin" ON public.batches FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+-- Public passport: anyone may read a certified batch (consumer-facing QR page).
+DROP POLICY IF EXISTS "batches_public_certified" ON public.batches;
+CREATE POLICY "batches_public_certified" ON public.batches FOR SELECT USING (status = 'certified');
 DROP POLICY IF EXISTS "skus_brand_own" ON public.skus;
 CREATE POLICY "skus_brand_own" ON public.skus FOR ALL
   USING (brand_id IN (SELECT id FROM public.brands WHERE profile_id = auth.uid()))

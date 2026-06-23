@@ -38,10 +38,13 @@ export default async function PassportPage({ params }: Props) {
   const supabase = createClient()
 
   // Look up the certified batch by UUID id, batch_id_code, or provenance slug.
+  // Explicit public-safe columns only — never SELECT * here, since this page
+  // is publicly readable and the batches row holds internal fields too.
   let query = supabase
     .from('batches')
     .select(`
-      *,
+      id, batch_id_code, textile_name, technique, fibre_content,
+      colour_palette, status, certified_at, production_start, production_end,
       artisans (
         artisan_id_code, full_name, village, district, state,
         photo_url, specialisation, years_experience,

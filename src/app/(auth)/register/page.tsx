@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { signUp } from '@/app/actions/auth'
+import { createClient } from '@/lib/supabase/server'
 
 function BrandMark() {
   return (
@@ -20,11 +21,18 @@ function Alert({ kind, children }: { kind: 'error' | 'ok'; children: React.React
   return <div style={{ ...style, borderRadius: '10px', padding: '11px 13px', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5 }}>{children}</div>
 }
 
-export default function RegisterPage({
+export default async function RegisterPage({
   searchParams,
 }: {
   searchParams: { error?: string; message?: string }
 }) {
+  const supabase = createClient()
+  const { data: clusters } = await supabase
+    .from('clusters')
+    .select('id, name, region')
+    .eq('active', true)
+    .order('name')
+
   return (
     <div className="login-wrap">
       <div className="login-card">
@@ -57,6 +65,15 @@ export default function RegisterPage({
             <select name="role" defaultValue="brand">
               <option value="brand">Fashion brand / buyer</option>
               <option value="coordinator">Field coordinator / artisan partner</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Cluster <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(field coordinators only)</span></label>
+            <select name="cluster_id" defaultValue="">
+              <option value="">— Not applicable —</option>
+              {clusters?.map(c => (
+                <option key={c.id} value={c.id}>{c.name}{c.region ? ` · ${c.region}` : ''}</option>
+              ))}
             </select>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Create account</button>

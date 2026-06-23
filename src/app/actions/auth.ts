@@ -26,12 +26,13 @@ export async function signUp(formData: FormData) {
   const full_name = formData.get('full_name') as string
   const role = (formData.get('role') as string) || 'brand'
   const organisation = formData.get('organisation') as string
+  const cluster_id = (formData.get('cluster_id') as string) || null
 
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name, role, organisation },
+      data: { full_name, role, organisation, cluster_id },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
     },
   })

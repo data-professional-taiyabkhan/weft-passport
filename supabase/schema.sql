@@ -259,16 +259,20 @@ RETURNS BOOLEAN LANGUAGE SQL SECURITY DEFINER STABLE SET search_path = public AS
 $$;
 
 -- Creates the profile row on signup, honouring the role chosen at
--- registration (validated against the enum), defaulting to 'brand'. Brand
--- users also get a brand workspace provisioned from their organisation name
--- so they can immediately create batches/SKUs (which are brand-scoped by RLS).
+-- registration (validated against the enum), defaulting to 'brand'.
+--  - brand users get a brand workspace from their organisation name, so they
+--    can immediately create batches/SKUs (brand-scoped by RLS);
+--  - coordinator users get a coordinators row assigned to their chosen cluster
+--    (or the first cluster as a fallback), so Field Capture passes RLS.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   meta_role TEXT := NEW.raw_user_meta_data->>'role';
   resolved_role user_role;
   org_name TEXT := NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'organisation', '')), '');
+  full_name TEXT := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name');
   base_slug TEXT;
+  target_cluster UUID;
 BEGIN
   resolved_role := CASE
     WHEN meta_role IN ('admin', 'brand', 'coordinator', 'consumer') THEN meta_role::user_role
@@ -276,19 +280,25 @@ BEGIN
   END;
 
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (NEW.id, NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
-    resolved_role)
+  VALUES (NEW.id, NEW.email, full_name, resolved_role)
   ON CONFLICT (id) DO NOTHING;
 
   IF resolved_role = 'brand' THEN
     base_slug := regexp_replace(lower(COALESCE(org_name, split_part(NEW.email, '@', 1))), '[^a-z0-9]+', '-', 'g');
     base_slug := NULLIF(trim(both '-' from base_slug), '');
     INSERT INTO public.brands (profile_id, brand_name, brand_slug)
-    SELECT NEW.id,
-           COALESCE(org_name, 'My Brand'),
+    SELECT NEW.id, COALESCE(org_name, 'My Brand'),
            COALESCE(base_slug, 'brand') || '-' || substr(md5(NEW.id::text), 1, 6)
     WHERE NOT EXISTS (SELECT 1 FROM public.brands WHERE profile_id = NEW.id);
+
+  ELSIF resolved_role = 'coordinator' THEN
+    target_cluster := COALESCE(
+      (SELECT id FROM public.clusters WHERE id::text = COALESCE(NEW.raw_user_meta_data->>'cluster_id', '')),
+      (SELECT id FROM public.clusters ORDER BY created_at LIMIT 1)
+    );
+    INSERT INTO public.coordinators (profile_id, cluster_id, full_name)
+    SELECT NEW.id, target_cluster, COALESCE(full_name, 'Field Coordinator')
+    WHERE NOT EXISTS (SELECT 1 FROM public.coordinators WHERE profile_id = NEW.id);
   END IF;
 
   RETURN NEW;

@@ -337,7 +337,7 @@ export default function HomePage() {
               <Link href="/about" className="btn btn-ghost" style={{marginTop: '20px'}}>Read the full story</Link>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/mehjabeen.jpeg" alt="Mahjabeen Bano — Founder of Weft Passport" style={{borderRadius: 'var(--radius)', width: '100%', minHeight: '380px', objectFit: 'cover', objectPosition: 'center top', boxShadow: 'var(--shadow-lg)'}} />
+            <img src="/mehjabeen.jpeg" alt="Mahjabeen Bano — Founder of Weft Passport" style={{borderRadius: 'var(--radius)', width: '80%', maxHeight: '420px', objectFit: 'cover', objectPosition: 'center top', boxShadow: 'var(--shadow-lg)', margin: '0 auto'}} />
           </div>
         </div>
       </section>

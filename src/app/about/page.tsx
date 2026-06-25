@@ -88,7 +88,8 @@ export default function AboutPage() {
                 Varanasi, and the regulatory and commercial expectations of UK and EU fashion brands.
               </p>
             </div>
-            <div style={{ background: 'linear-gradient(135deg, var(--indigo-deep), var(--indigo))', borderRadius: 'var(--radius)', display: 'grid', placeItems: 'center', minHeight: '420px', color: 'var(--zari-bright)', fontFamily: 'var(--font-serif)', fontSize: '64px', fontWeight: 600 }}>MB</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/mehjabeen.jpeg" alt="Mahjabeen Bano — Founder" style={{ borderRadius: 'var(--radius)', width: '80%', maxHeight: '420px', objectFit: 'cover', objectPosition: 'center top', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }} />
           </div>
         </div>
       </section>
@@ -138,7 +139,12 @@ export default function AboutPage() {
                 { initials: 'SC', bg: 'linear-gradient(135deg,#3a5c3a,#2a4a2a)', name: 'Sachin', role: 'Co-Founder & CTO', bio: 'Owns the technical architecture: proprietary relational data schema, mobile-first field capture, anomaly detection, compliance translation layer, and cloud infrastructure. MSc Big Data Analytics (Distinction, Birmingham City University). 3.5+ years of production-scale data systems architecture.' },
               ].map((m) => (
                 <div key={m.name} style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '28px' }}>
-                  <div style={{ width: '64px', height: '64px', borderRadius: '14px', background: m.bg, display: 'grid', placeItems: 'center', color: '#fff', fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '24px', flexShrink: 0 }}>{m.initials}</div>
+                  {m.initials === 'MB' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src="/mehjabeen.jpeg" alt={m.name} style={{ width: '64px', height: '64px', borderRadius: '14px', objectFit: 'cover', objectPosition: 'center top', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: '64px', height: '64px', borderRadius: '14px', background: m.bg, display: 'grid', placeItems: 'center', color: '#fff', fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '24px', flexShrink: 0 }}>{m.initials}</div>
+                  )}
                   <div>
                     <h3 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: 600 }}>{m.name}</h3>
                     <div style={{ fontSize: '12px', color: 'var(--zari)', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '.5px', marginBottom: '8px' }}>{m.role}</div>

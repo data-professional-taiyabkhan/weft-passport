@@ -336,7 +336,8 @@ export default function HomePage() {
               <p className="p-body">Her professional experience spans luxury retail merchandising, trend research and technical design in India, and two years building Silk and Soil in the UK — giving her direct fluency in both artisan production realities and UK/EU brand expectations.</p>
               <Link href="/about" className="btn btn-ghost" style={{marginTop: '20px'}}>Read the full story</Link>
             </div>
-            <div style={{background: 'linear-gradient(135deg, var(--indigo-deep), var(--indigo))', borderRadius: 'var(--radius)', display: 'grid', placeItems: 'center', minHeight: '380px', color: 'var(--zari-bright)', fontFamily: 'var(--font-serif)', fontSize: '80px', fontWeight: 600}}>MB</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/mehjabeen.jpeg" alt="Mahjabeen Bano — Founder of Weft Passport" style={{borderRadius: 'var(--radius)', width: '100%', minHeight: '380px', objectFit: 'cover', objectPosition: 'center top', boxShadow: 'var(--shadow-lg)'}} />
           </div>
         </div>
       </section>
